@@ -82,6 +82,9 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#initialize button
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
+		###Error messages
+		self.error_dialog = QtWidgets.QErrorMessage()
+		
 		
 		
 		
@@ -128,6 +131,8 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.gratingPos_steps = [self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)]
 		print("gratingPos: {}, stepIncrement: {}".format(self.gratingPos, self.stepIncrement))
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		
+
 		
 	def startscan(self):
 		"""Slot for StartScan_Button
@@ -190,12 +195,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		return
 		
 	
-	
 	def menuBar_action(self, action):
 		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
 		"""
 		print("menu bar action triggered")
-		
 		if action == self.actionMainMenu:
 			#Check if subwindow already exists, show it and its widgets in case user had exited out.
 			if self.mainmenu_sub in self.mdiArea.subWindowList():
@@ -208,7 +211,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 				print('added main menu to mdiArea')
 				self.mdiArea.addSubWindow(self.mainmenu_sub)
 				self.mainmenu_sub.show()
-				
+		
 		elif action == self.actionScanningMenu:
 			print('Triggered time base scanning menu')
 		#Check if subwindow already exists, show it and its widgets in case user had exited out.
@@ -223,18 +226,40 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 				self.mdiArea.addSubWindow(self.scanningmenu_sub)
 				self.scanningmenu_sub.show()
 
+				
 		elif action in self.detectorOptions:
 			self.detector = self.detectorOptions[action]
 			print('Detector changed to "{}"!'.format(self.detector))
+			
+		#set the check mark next to the new detector setting
+			for act in self.detectorOptions:
+				if act.isChecked():
+					act.setChecked(False)
+					
+			action.setChecked(True)
 			
 		elif action in self.gainOptions:
 			self.gain = self.gainOptions[action]
 			print('Gain Changed to "{}"!'.format(self.gain))
 			
+		#set the check mark next to the new detector setting
+			for act in self.gainOptions:
+				if act.isChecked():
+					act.setChecked(False)
+					
+			action.setChecked(True)
+			
 		elif action in self.gratingOptions:
 			self.grating = self.gratingOptions[action]
 			print('Grating changed to "{}"!'.format(self.grating))
-		
+			
+			#set the check mark next to the new detector setting
+			for act in self.gratingOptions:
+				if act.isChecked():
+					act.setChecked(False)
+					
+			action.setChecked(True)
+						
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
 	form = TBS_Menu()				 # We set the form to be our ExampleApp (StartUpMenu)
