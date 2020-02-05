@@ -1273,17 +1273,17 @@ class Scanning(tk.Frame):
 
 		if grating=='1800 l/mm (Vis)':
 			#Compute the number of data points with the given step size (0.0041666667nm is the step size given by the manual)
-			lowStep = int(float(low)/0.0041666667)
-			highStep = int(float(high)/0.0041666667)
+			lowStep = np.round(float(low)/0.0041666667)
+			highStep = np.round(float(high)/0.0041666667)
 			rangeDif = highStep-lowStep
-			stepLength = int(stepSize/0.0041666667)
-			dataPoints = int(rangeDif/stepLength)
+			stepLength = np.round(stepSize/0.0041666667)
+			dataPoints = np.round(rangeDif/stepLength)
 		elif grating=='600 l/mm (IR)':
-			lowStep = int(float(low)/0.0125)
-			highStep = int(float(high)/0.0125)
+			lowStep = np.round(float(low)/0.0125)
+			highStep = np.round(float(high)/0.0125)
 			rangeDif = highStep-lowStep
-			stepLength = int(stepSize/0.0125)
-			dataPoints = int(rangeDif/stepLength)
+			stepLength = np.round(stepSize/0.0125)
+			dataPoints = np.round(rangeDif/stepLength)
 		
 		#If exceeding 5000 data points:
 		if dataPoints>5000:
@@ -2125,18 +2125,18 @@ class timeBaseScanning(tk.Frame):
 		self.startButton.config(state=NORMAL)
 
 def mainloop_thread():
-    app = HR460App()
-    app.mainloop()
+	app = HR460App()
+	app.mainloop()
 
 
 def main():
-    #thread_mainloop = threading.Thread(target = mainloop_thread)
-    #thread_mainloop.start()
-    print('running2')
-    app = HR460App()
-    app.mainloop()
+	#thread_mainloop = threading.Thread(target = mainloop_thread)
+	#thread_mainloop.start()
+	print('running2')
+	app = HR460App()
+	app.mainloop()
 
-    
+	
 if __name__ == '__main__':
-    print('running')
-    main()
+	print('running')
+	main()

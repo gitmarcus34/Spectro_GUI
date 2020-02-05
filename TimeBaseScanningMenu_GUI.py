@@ -4,6 +4,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+import numpy as np
+
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
 
@@ -39,11 +41,11 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		####sliders
 		#Slider Signals
-		self.EntranceSlitSlider.valueChanged.connect(self.sliderEnt_Change)
-		self.ExitSlitSlider.valueChanged.connect(self.sliderExit_Change)
-		self.IntegrationTimeSlider.valueChanged.connect(self.sliderInt_Change)
-		self.TimeIncrementSlider.valueChanged.connect(self.sliderInc_Change)
-		self.TotalTimeSlider.valueChanged.connect(self.sliderTotal_Change)
+		self.EntranceSlitSlider.valueChanged.connect(self.sliderEntranceSlit_Change)
+		self.ExitSlitSlider.valueChanged.connect(self.sliderExitSlit_Change)
+		self.IntegrationTimeSlider.valueChanged.connect(self.sliderIntegrationTime_Change)
+		self.TimeIncrementSlider.valueChanged.connect(self.sliderTimeIncrement_Change)
+		self.TotalTimeSlider.valueChanged.connect(self.sliderTotalTime_Change)
 		
 		#slider properties
 		self.maxEnt_nm = 10000
@@ -74,48 +76,46 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		###Buttons
 		#Apply setings button
 		self.ApplySettings_Button.clicked.connect(self.applysettings) 
-		
-		"""#Slider properties
-		
-		###define subwindows for CoreWindow that span from widgetActions in this menu.
-		#main menu subwindow
-		self.mainmenu = MainMenu_GUI.MainMenu()
-		self.mainmenu_sub = QMdiSubWindow()
-		self.mainmenu_sub.setWidget(self.mainmenu)
+		self.StartScan_Button.clicked.connect(self.startscan)
+		self.EndScan_Button.clicked.connect(self.endscan)
 		
 		#initialize button
-		self.Initialize_Button.clicked.connect(self.HR460_Initialize)
-		"""
+		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
 		
 		
-	def sliderEnt_Change(self, slider_val):
+		
+	def sliderEntranceSlit_Change(self, slider_val):
 		self.lcdNum_EntranceSlider.display(slider_val)
 		
-	def sliderExit_Change(self, slider_val):
+	def sliderExitSlit_Change(self, slider_val):
 		self.lcdNum_ExitSlider.display(slider_val)
 	
-	def sliderInt_Change(self, slider_val):
+	def sliderIntegrationTime_Change(self, slider_val):
 		maxIntTime_ms = 200
 		self.lcdNum_IntTimeSlider.display(slider_val)
 		
-	def sliderInc_Change(self, slider_val):
+	def sliderTimeIncrement_Change(self, slider_val):
 		maxTimeInc_ms = 500
 		self.lcdNum_TimeIncrementSlider.display(slider_val)
 
-	def sliderTotal_Change(self, slider_val):
+	def sliderTotalTime_Change(self, slider_val):
 		maxTotalTime_sec = 200
 		totalTime = 200
 		self.lcdNum_TotalTimeSlider.display(slider_val)	
 		
-
+	#Button slots/funcs
 	def applysettings(self):
+		"""Slot for ApplySettings_Button
+		"""
+		
 		print('Applying Settings!')
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
 		self.timeInc = self.TimeIncrementSlider.value()
 		self.totalTime = self.TotalTimeSlider.value()
+		self.wavelength_nm = self.wavelength_input.text()
 		print('Detector:', self.detector, '; Gain:', self.gain, '; self.grating:', self.grating)
 		
 
@@ -125,9 +125,70 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		print('Time Increment:', self.timeInc)
 		print('Total Time:', self.totalTime)
 		
+		self.gratingPos_steps = [self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)]
+		print("gratingPos: {}, stepIncrement: {}".format(self.gratingPos, self.stepIncrement))
+		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		
+	def startscan(self):
+		"""Slot for StartScan_Button
+		"""
+		
+		print('Starting Scan!')
+		#self.spectrometer.startScan()
+		
+	def endscan(self):
+		"""Slot for endScan_Button
+		"""
+		
+		print('Ending Scan!')
+		#Used to stop the current time base scan
+		endFlag = True
+		totalTime = 0
+		while endFlag:
+			try:
+				#response_end = a.scanStop()
+				print('Scan Ended')
+				endFlag = False
+			except serial.serialutil.SerialException:
+				   time.sleep(0.001)
+				   totalTime += 0.001
+	
+		
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(timeInc),str(totalTime)):
 
-	
+	def convert_NMtoSTEPS(self, grating, nm_val, getFactor = False):
+		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
+		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step wavelength drive step size described 
+		in usermanual PDF page 41).  
+		
+		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook PDF (equation (3)).
+		Essentially: (nm/step factor) = (0.00625 nm)*((1200 l/mm)/(new grating l/mm)) which is just the inverse of the steps/nm factor.  
+		
+		Note that if getFactor parameter is True then this function only returns the step/nm factor for the given grating and ignores the wavelength parameter.
+		"""
+		nm_val = float(nm_val)
+		if grating == '1800 l/mm (Vis)':
+			stepFactor = float(0.00625*((1200)/(1800)))
+			
+			if getFactor == True:
+				return stepFactor
+				
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		elif grating == '600 l/mm (IR)':
+			stepFactor = float(0.00625*((1200)/(600)))
+			
+			if getFactor == True:
+				return stepFactor
+				
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		else:
+			print("Grating is not '1800 l/mm (Vis) or 600 l/mm (IR)")
+		return
+		
 	
 	
 	def menuBar_action(self, action):

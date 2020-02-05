@@ -41,10 +41,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		###sliders 
 		#Signals
-		self.EntranceSlitSlider.valueChanged.connect(self.sliderEnt_Change)
-		self.ExitSlitSlider.valueChanged.connect(self.sliderExit_Change)
-		self.IntegrationTimeSlider.valueChanged.connect(self.sliderInt_Change)
-		self.StepSizeSlider.valueChanged.connect(self.sliderStep_Change)
+		self.EntranceSlitSlider.valueChanged.connect(self.sliderEntranceSlit_Change)
+		self.ExitSlitSlider.valueChanged.connect(self.sliderExitSlit_Change)
+		self.IntegrationTimeSlider.valueChanged.connect(self.sliderIntegrationTime_Change)
+		self.StepSizeSlider.valueChanged.connect(self.sliderStepSize_Change)
 		
 		#slider properties
 		self.maxEnt_nm = 10000
@@ -62,76 +62,112 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.IntegrationTimeSlider.setMaximum(self.maxIntTime_ms)
 		self.IntegrationTimeSlider.setTickInterval(self.tickInterval)
 		
-		self.maxStepSize_nm = 500
-		self.tickInterval = self.maxStepSize_nm/20
-		self.StepSizeSlider.setMaximum(self.maxStepSize_nm)
+		self.maxStepSize_steps = self.convert_NMtoSTEPS(self.grating, 5)  #set max step size to 5 nm and increment by step factor (accounted for in slider _Change function)
+		self.tickInterval = self.maxStepSize_steps/5
+		self.StepSizeSlider.setMaximum(self.maxStepSize_steps)
 		self.StepSizeSlider.setTickInterval(self.tickInterval)
 		
-		#Buttons
+		###Buttons
+		#signals
 		self.ApplySettings_Button.clicked.connect(self.applysettings)
-
+		self.StartScan_Button.clicked.connect(self.startscan)
+		self.EndScan_Button.clicked.connect(self.endscan)
 		
-		"""###define subwindows for CoreWindow that span from widgetActions in this menu.
-		#main menu subwindow
-		self.mainmenu = MainMenu_GUI.MainMenu()
-		self.mainmenu_sub = QMdiSubWindow()
-		self.mainmenu_sub.setWidget(self.mainmenu)
+		#spectrometer initialize button (use upon HR460 power up for spectrometer to be calibrated to base grating.)
+		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
-		#initialize button
-		self.Initialize_Button.clicked.connect(self.HR460_Initialize)
-		"""
 	
-	def sliderEnt_Change(self, slider_val):
+	def sliderEntranceSlit_Change(self, slider_val):
 		self.lcdNum_EntranceSlider.display(slider_val)
 		
-	def sliderExit_Change(self, slider_val):
+	def sliderExitSlit_Change(self, slider_val):
 		self.lcdNum_ExitSlider.display(slider_val)
 	
-	def sliderInt_Change(self, slider_val):
+	def sliderIntegrationTime_Change(self, slider_val):
 		self.lcdNum_IntTimeSlider.display(slider_val)
 		
-	def sliderStep_Change(self, slider_val):
-		self.lcdNum_StepSizeSlider.display(slider_val)
+	def sliderStepSize_Change(self, slider_val):
+		stepFactor = self.convert_NMtoSTEPS(self.grating, getFactor = True)
+		incremented_val = float(slider_val*stepFactor)
 		
+		#display step sizes in increments of the step factor for the given grating
+		self.lcdNum_StepSizeSlider.display(incremented_val)
+	
+	###funtions/slots 
 	def applysettings(self):
 		print('Applying Settings!')
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
-		self.stepSize = self.StepSizeSlider.value()
-		self.lowerWavelen = self.lowerWavelength_input.text()
-		self.upperWavelen = self.upperWavelength_input.text()
+		self.stepSize_nm = self.StepSizeSlider.value()
+		self.lowerWavelen_nm = self.lowerWavelength_input.text()
+		self.upperWavelen_nm = self.upperWavelength_input.text()
 		
 		print('Detector:', self.detector, '; Gain:', self.gain, '; Grating:', self.grating)
 		
 		print('Entrance Width:', self.entSize)
 		print('Exit width:', self.exitSize)
 		print('Integration time:', self.intTime)
-		print('Step Size:', self.stepSize)
+		print('Step Size:', self.stepSize_nm)
 		
-		self.lowStep, self.highStep = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen), self.convert_NMtoSTEPS(self.grating, self.upperWavelen)]
-		self.stepIncrement = self.convert_NMtoSTEPS(self.grating, self.stepSize)
-		print("lowStep: {}, highStep: {}, stepIncrement: {}".format(self.lowStep, self.highStep, self.stepIncrement))
+		self.lowerWave_steps, self.upperWave_steps = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen_nm), self.convert_NMtoSTEPS(self.grating, self.upperWavelen_nm)]
+		self.stepFactor_nm_step = self.convert_NMtoSTEPS(self.grating, getFactor = True) #setting getFactor param to true returns the step factor of the given grating
+		print(self.stepFactor_nm_step)
+		self.stepIncrement_steps = np.round(self.stepSize_nm/self.stepFactor_nm_step)
+		print("lowStep: {}, highStep: {}, stepIncrement: {}".format(self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps))
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
-	def convert_NMtoSTEPS(self, grating, nm_val):
-		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
+	def startscan(self):
+		print('Starting Scan!')
+		#self.spectrometer.startScan()
+		
+	def endscan(self):
+		print('Ending Scan!')
+		#Used to stop the current time base scan
+		endFlag = True
+		totalTime = 0
+		while endFlag:
+			try:
+				#response_end = a.scanStop()
+				print('Scan Ended')
+				endFlag = False
+			except serial.serialutil.SerialException:
+				   time.sleep(0.001)
+				   totalTime += 0.001
+	
+	
+
+		
+	def convert_NMtoSTEPS(self, grating, nm_val = 0, getFactor = False):
+		"""Converts a nm_val (which may be a desired nanometer value of wavelength or step size for example) to the grating motor step position knowing that the 
 		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step resolution descreibed 
 		in user manual PDF page 41).  
 		
 		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook (equation (3)).
 		Essentially: (nm/step factor) = (0.00625 nm)*((1200 l/mm)/(new grating l/mm)) which is just the inverse of the steps/nm factor.  
 		
-		Note that this can only be called for the '1800 l/mm (Vis) and 600 l/mm (IR) grating else get a print response.
+		Note that this can currently only be called for the '1800 l/mm (Vis)' and '600 l/mm (IR)' grating else get a print response.
+		
+		Note that if get factor is True then this function only returns the step/nm factor for the given grating and ignores the 
 		"""
+		
+		if float(nm_val) < 0:
+			print("{} is not positive number".format(nm_val))
+		
 		nm_val = float(nm_val)
 		if grating == '1800 l/mm (Vis)':
 			stepFactor = float(0.00625*((1200)/(1800)))
+			if getFactor == True:
+				return stepFactor
+				
 			stepPos = np.round(nm_val/stepFactor)
 			return stepPos
 			
 		elif grating == '600 l/mm (IR)':
 			stepFactor = float(0.00625*((1200)/(600)))
+			if getFactor == True:
+				return stepFactor
+				
 			stepPos = np.round(nm_val/stepFactor)
 			return stepPos
 			
@@ -180,7 +216,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			
 		elif action in self.gratingOptions:
 			self.grating = self.gratingOptions[action]
+			
+			#step size changes for different gratings. Certain related properties must be therefore be changed correspondingly.
+			self.maxStepSize_steps = self.convert_NMtoSTEPS(self.grating, 5)
+			self.tickInterval = self.maxStepSize_steps/5
+			self.StepSizeSlider.setMaximum(self.maxStepSize_steps)
+			self.StepSizeSlider.setTickInterval(self.tickInterval)
 			print('Grating changed to "{}"!'.format(self.grating))
+			
 		
 
 		
