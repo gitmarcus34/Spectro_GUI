@@ -4,6 +4,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 #import matplotlib
+
+#commit to editing
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
 
