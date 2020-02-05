@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 #import matplotlib
 
-#commit to editing
+import numpy as np
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
 
@@ -99,14 +99,45 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
 		self.stepSize = self.StepSizeSlider.value()
+		self.lowerWavelen = self.lowerWavelength_input.text()
+		self.upperWavelen = self.upperWavelength_input.text()
+		
 		print('Detector:', self.detector, '; Gain:', self.gain, '; Grating:', self.grating)
 		
 		print('Entrance Width:', self.entSize)
 		print('Exit width:', self.exitSize)
 		print('Integration time:', self.intTime)
 		print('Step Size:', self.stepSize)
+		
+		self.lowStep, self.highStep = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen), self.convert_NMtoSTEPS(self.grating, self.upperWavelen)]
+		self.stepIncrement = self.convert_NMtoSTEPS(self.grating, self.stepSize)
+		print("lowStep: {}, highStep: {}, stepIncrement: {}".format(self.lowStep, self.highStep, self.stepIncrement))
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
-
+		
+	def convert_NMtoSTEPS(self, grating, nm_val):
+		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
+		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step resolution descreibed 
+		in user manual PDF page 41).  
+		
+		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook (equation (3)).
+		Essentially: (nm/step factor) = (0.00625 nm)*((1200 l/mm)/(new grating l/mm)) which is just the inverse of the steps/nm factor.  
+		
+		Note that this can only be called for the '1800 l/mm (Vis) and 600 l/mm (IR) grating else get a print response.
+		"""
+		nm_val = float(nm_val)
+		if grating == '1800 l/mm (Vis)':
+			stepFactor = float(0.00625*((1200)/(1800)))
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		elif grating == '600 l/mm (IR)':
+			stepFactor = float(0.00625*((1200)/(600)))
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		else:
+			print("Grating is not '1800 l/mm (Vis) or 600 l/mm (IR)")
+		return 
 	
 	def menuBar_action(self, action):
 		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
