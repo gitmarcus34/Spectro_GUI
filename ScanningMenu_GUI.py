@@ -8,7 +8,34 @@ from PyQt5.QtWidgets import *
 import numpy as np
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
+import time
 
+class BasicThread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, progressBar = None, parent = None):
+		super(BasicThread, self).__init__(parent)
+		self.progressBar = progressBar
+		
+	def TriggerRun(self):
+		self.actionSignal.emit()
+	
+	def run(self):
+		i = 0
+		while True:
+			print("hello world", i)
+			i += 1
+			
+			barMessage = self.progressBar.text()
+			if barMessage[-3:] != '...':
+				self.progressBar.setFormat("{}.".format(barMessage))			
+			else:
+				self.progressBar.setFormat(barMessage[:-3])
+			time.sleep(0.5)
+			self.actionSignal.emit()
+			
+
+
+		
 
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
@@ -17,6 +44,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.mdiArea = mdiArea
 		self.spectrometer = spectrometer
 		self.subwindow_dict = subwindow_dict
+		
+		self.basicThread = BasicThread(self.progressBar)
+		
+		
+		#progress bar
+		self.progressBar.reset()
+		self.progressBar.setValue(0)
+	
 		
 		#bar menu
 		##window paths
@@ -33,6 +68,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		self.menuGrating.triggered[QAction].connect(self.menuBar_action)
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
+		
 		
 		
 		#subwindows
@@ -73,7 +109,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#signals
 		self.ApplySettings_Button.clicked.connect(self.applysettings)
 		self.StartScan_Button.clicked.connect(self.startscan)
-		self.EndScan_Button.clicked.connect(self.endscan)
+		#self.EndScan_Button.clicked.connect(self.endscan)
+		self.EndScan_Button.clicked.connect(self.basicThreadedFunc)
 		
 		#spectrometer initialize button (use upon HR460 power up for spectrometer to be calibrated to base grating.)
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
@@ -81,6 +118,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		###Error Messages
 		self.error_inputNotNum = QtWidgets.QErrorMessage()
 		self.error_inputNotInRange =QtWidgets.QErrorMessage()
+		
+	def basicThreadedFunc(self):
+		print("basic thread starting")
+		self.basicThread.start()
 		
 	
 	def sliderEntranceSlit_Change(self, slider_val):
@@ -102,7 +143,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	###funtions/slots 
 	def applysettings(self):
 		print('Applying Settings!')
-		
+		self.progressBar.reset()
+		self.progressBar.setFormat('Applying Settings!')
+		self.progressBar.setValue(10)
+		time.sleep(1.8)
 		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
@@ -158,8 +202,17 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.stepFactor_nm_step = self.convert_NMtoSTEPS(self.grating, getFactor = True) #setting getFactor param to true returns the step factor of the given grating
 		self.stepIncrement_steps = np.round(self.stepSize_nm/self.stepFactor_nm_step)
 		print("lowStep: {}, highStep: {}, stepIncrement: {}".format(self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps))
-		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
+		print('Applying Settings and Preparing monochromator for scanning')
+		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
+		self.progressBar.setValue(60)
+
+		time.sleep(5)
+		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		
+		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
+		self.progressBar.setValue(100)
+
 		
 	def startscan(self):
 		print('Starting Scan!')
@@ -305,6 +358,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			pass
 
 		return False
+		
+
+			
+		
 		
 		
 def main():
