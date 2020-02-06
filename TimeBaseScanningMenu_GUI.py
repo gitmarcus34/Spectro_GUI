@@ -60,6 +60,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		self.maxIntTime_ms = 500
 		self.tickInterval = self.maxIntTime_ms/20
+		self.IntegrationTimeSlider.setMinimum(1)		
 		self.IntegrationTimeSlider.setMaximum(self.maxIntTime_ms)
 		self.IntegrationTimeSlider.setTickInterval(self.tickInterval)
 		
@@ -70,6 +71,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		self.maxTotalTime_sec = 100
 		self.tickInterval = self.maxTotalTime_sec/20
+		self.IntegrationTimeSlider.setMinimum(1)
 		self.TotalTimeSlider.setMaximum(self.maxTotalTime_sec)
 		self.TotalTimeSlider.setTickInterval(self.tickInterval)
 		
@@ -83,7 +85,8 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
 		###Error messages
-		self.error_dialog = QtWidgets.QErrorMessage()
+		self.error_inputNotNum = QtWidgets.QErrorMessage()
+		self.error_inputNotInRange = QtWidgets.QErrorMessage()
 		
 		
 		
@@ -128,9 +131,37 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		print('Time Increment:', self.timeInc)
 		print('Total Time:', self.totalTime)
 		
+		self.error_inputNotNum.done(1) #delete error message
+		if not (self.is_number(self.wavelength_nm)):
+			print('Displaying Error Message')
+			self.error_inputNotNum.showMessage("ERROR: Wavelength input is not a number!") #make/remake error message
+			#self.error_dialog.activateWindow()
+			
+			return #do not continue to calculations
+			
+		self.wavelength_nm = float(self.wavelength_nm) #We all float down here
+		
+		
+		self.error_inputNotInRange.done(1) #delete error message
+		if self.wavelength_nm < 0:
+			print('Displaying Error Message')
+			self.error_inputNotInRange.showMessage("ERROR: Wavelength input must be a positive number!") #make/remake error message
+			return #do not continue to calculations and settings application	
+			
+		elif (self.wavelength_nm < 300 or self.wavelength_nm > 870) and self.grating == '1800 l/mm (Vis)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
+			print('Displaying Error Message')
+			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			return #do not continue to calculations and settings application
+		
+		elif (self.wavelength_nm < 300 or self.wavelength_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
+			print('Displaying Error Message')
+			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			return #do not continue to calculations and settings application
+		
 		self.gratingPos_steps = [self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)]
-		print("gratingPos: {}, stepIncrement: {}".format(self.gratingPos, self.stepIncrement))
+		print("gratingPos: {}".format(self.gratingPos_steps))
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		
 		
 
 		
@@ -259,6 +290,17 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 					act.setChecked(False)
 					
 			action.setChecked(True)
+			
+	def is_number(self,a):
+		"""Function used to check if input from user is a number.
+		"""
+		try:
+			float(a)
+			return True
+		except ValueError:
+			pass
+
+		return False
 						
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication

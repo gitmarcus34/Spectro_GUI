@@ -118,12 +118,12 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		print('Integration time:', self.intTime)
 		print('Step Size:', self.stepSize_nm)
 		
-		###Before doing calculations make sure inputs are valid. Display error messages where necessary.
+		###Before doing calculations and applying settings make sure inputs are valid. Display error messages where necessary.
 		
 		#If user hides the error message and tries same bad input make sure to display the hidden error message again (delete window and remake it so that copies are not made)
 		self.error_inputNotNum.done(1) #delete error message
 		if not (self.is_number(self.lowerWavelen_nm) and  self.is_number(self.upperWavelen_nm)):
-			
+			print('Displaying Error Message')
 			self.error_inputNotNum.showMessage("ERROR: Wavelength input is not a number!") #make/remake error message
 			#self.error_dialog.activateWindow()
 			
@@ -135,19 +135,22 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			
 		self.error_inputNotInRange.done(1) #delete error message
 		if self.lowerWavelen_nm < 0:
-			
+			print('Displaying Error Message')
 			self.error_inputNotInRange.showMessage("ERROR: Wavelength input must be a positive number!") #make/remake error message
 			return #do not continue to calculations and settings application	
-            
+			
 		elif self.lowerWavelen_nm >= self.upperWavelen_nm: #make sure  lower is less than upper
+			print('Displaying Error Message')
 			self.error_inputNotInRange.showMessage("ERROR: Lower wavelength input must be less than upper wavelength input!") #make/remake error message
 			return #do not continue to calculations and settings application
-            
+			
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 870) and self.grating == '1800 l/mm (Vis)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
+			print('Displaying Error Message')
 			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
 			return #do not continue to calculations and settings application
-        
+		
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
+			print('Displaying Error Message')
 			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
 			return #do not continue to calculations and settings application
 		
