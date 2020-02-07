@@ -10,21 +10,18 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 			  # it also keeps events etc that we defined in Qt Designer
 import time
 
-class BasicThread(QThread):
+class BusyDots_Thread(QThread):
 	actionSignal = pyqtSignal()
-	def __init__(self, progressBar = None, parent = None):
-		super(BasicThread, self).__init__(parent)
+	def __init__(self,progressBar = None, parent = None):
+		super(BusyDots_Thread, self).__init__(parent)
 		self.progressBar = progressBar
+		self.busy = True
 		
-	def TriggerRun(self):
-		self.actionSignal.emit()
+	def triggerFinish(self):
+		self.busy = False
 	
 	def run(self):
-		i = 0
-		while True:
-			print("hello world", i)
-			i += 1
-			
+		while self.busy:		
 			barMessage = self.progressBar.text()
 			if barMessage[-3:] != '...':
 				self.progressBar.setFormat("{}.".format(barMessage))			
@@ -33,6 +30,18 @@ class BasicThread(QThread):
 			time.sleep(0.5)
 			self.actionSignal.emit()
 			
+class SetScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, lowStep, highStep, stepIncrement_steps, intTime, entSize, exitSize, gain, grating ,detector , parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		
+	
+	def run(self):
+		time.sleep(5)
+		print('settings applied')
+		return
+		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):		
+		
 
 
 		
@@ -45,8 +54,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.spectrometer = spectrometer
 		self.subwindow_dict = subwindow_dict
 		
-		self.basicThread = BasicThread(self.progressBar)
-		
+		#Thread Definitions
+		self.busyMessageThread = BusyDots_Thread(self.progressBar)
 		
 		#progress bar
 		self.progressBar.reset()
@@ -110,7 +119,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.ApplySettings_Button.clicked.connect(self.applysettings)
 		self.StartScan_Button.clicked.connect(self.startscan)
 		#self.EndScan_Button.clicked.connect(self.endscan)
-		self.EndScan_Button.clicked.connect(self.basicThreadedFunc)
+		self.EndScan_Button.clicked.connect(self.busytext_progressbar)
 		
 		#spectrometer initialize button (use upon HR460 power up for spectrometer to be calibrated to base grating.)
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
@@ -119,9 +128,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.error_inputNotNum = QtWidgets.QErrorMessage()
 		self.error_inputNotInRange =QtWidgets.QErrorMessage()
 		
-	def basicThreadedFunc(self):
+	def busytext_progressbar(self):
 		print("basic thread starting")
-		self.basicThread.start()
+		self.busyMessageThread.start()
 		
 	
 	def sliderEntranceSlit_Change(self, slider_val):
@@ -143,10 +152,12 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	###funtions/slots 
 	def applysettings(self):
 		print('Applying Settings!')
+		self.busytext_progressbar()
+		
 		self.progressBar.reset()
 		self.progressBar.setFormat('Applying Settings!')
 		self.progressBar.setValue(10)
-		time.sleep(1.8)
+		#time.sleep(1.8)
 		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
@@ -206,12 +217,22 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		print('Applying Settings and Preparing monochromator for scanning')
 		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
 		self.progressBar.setValue(60)
-
-		time.sleep(5)
+		
+		self.setscan_thread = SetScan_Thread(self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread.start()
+		#time.sleep(5)
 		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
+		#self.setscan_thread.quit()
+		#self.setscan_thread.wait()
+		self.setscan_thread.finished.connect(self.threadFinished)
+	
+	def threadFinished(self):
+		print('Thread is finished!')
 		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
 		self.progressBar.setValue(100)
+		self.busyMessageThread.triggerFinish()
+
 
 		
 	def startscan(self):
