@@ -10,6 +10,38 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 			  # it also keeps events etc that we defined in Qt Designer
 import time
 
+class Error_Message(QMessageBox):
+	def __init__(self, title, text = 'Error', checked = False, parent = None):
+		super(Error_Message, self).__init__(parent)
+		self.setWindowTitle(title)
+		self.setText(text)
+		self.checked = checked
+		
+		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.setMinimumSize(QtCore.QSize(600, 300))
+		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
+
+		self.checkBox = QCheckBox()
+		if self.checked:
+			self.checkBox = QCheckBox()
+			self.setCheckBox(self.checkBox)
+			
+	def setChecked(self, newBox = True):
+		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
+		"""
+		if newBox:
+			self.setCheckBox(self.checkBox)
+			
+		elif newBox == False:
+			#remove the check box but be sure to not destroy an instance of checkbox
+			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
+	
+	def run():
+		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
+		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
+		form.show()						 # Show the form
+		app.exec_()	
+
 class BusyDots_Thread(QThread):
 	actionSignal = pyqtSignal()
 	def __init__(self,progressBar = None, parent = None):
@@ -17,8 +49,11 @@ class BusyDots_Thread(QThread):
 		self.progressBar = progressBar
 		self.busy = True
 		
-	def triggerFinish(self):
-		self.busy = False
+	def triggerFinish(self, busy = False):
+		"""call with busy = False to trigger run to return
+		"""
+		self.busy = busy
+
 	
 	def run(self):
 		while self.busy:		
@@ -29,22 +64,60 @@ class BusyDots_Thread(QThread):
 				self.progressBar.setFormat(barMessage[:-3])
 			time.sleep(0.5)
 			self.actionSignal.emit()
-			
+		return
 class SetScan_Thread(QThread):
 	actionSignal = pyqtSignal()
 	def __init__(self, lowStep, highStep, stepIncrement_steps, intTime, entSize, exitSize, gain, grating ,detector , parent = None):
 		super(SetScan_Thread, self).__init__(parent)
+		self.lowStep = lowStep
+		self.highStep = highStep
+		self.stepIncrement = stepIncrement_steps
+		self.intTime = intTime
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.gain = gain
+		self.grating = grating
+		self.detector = detector
 		
 	
 	def run(self):
 		time.sleep(5)
-		print('settings applied')
+		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.extSize/12.5)),str(self.gain),self.grating,self.detector,'3',str(self.gratingPos),str(self.incTime),str(self.totalTime)):
+		#print("Apply Settings Response: ", responseApply)
+		responseApply = True
+		if responseApply:
+			print('settings applied') 
 		return
-		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):		
+		
+		
+class StartScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		self.lowStep
+		self.highStep
+		self.stepIncrement
+		self.intTime
+		self.entSize
+		self.exitSize
+		self.gain
+		self.grating
+		self.detector
+		
+	
+	def run(self):
+		print('Scan started!')
+		time.sleep(5)
+		#response = self.spectrometer.startScan()
+		response = True
+		if response == 0: #check if scan has ended
+			print('gathering data')
+			#steps, intensities = self.spectrometer.getScanData()
+			
 		
 
-
-		
+		return
+			
 
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
@@ -60,7 +133,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#progress bar
 		self.progressBar.reset()
 		self.progressBar.setValue(0)
-	
+		
+		self.errorMessage = Error_Message('test message')
+		#self.errorMessage.exec()
 		
 		#bar menu
 		##window paths
@@ -119,14 +194,23 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.ApplySettings_Button.clicked.connect(self.applysettings)
 		self.StartScan_Button.clicked.connect(self.startscan)
 		#self.EndScan_Button.clicked.connect(self.endscan)
-		self.EndScan_Button.clicked.connect(self.busytext_progressbar)
+		self.EndScan_Button.clicked.connect(self.endscan)
 		
 		#spectrometer initialize button (use upon HR460 power up for spectrometer to be calibrated to base grating.)
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
 		###Error Messages
-		self.error_inputNotNum = QtWidgets.QErrorMessage()
-		self.error_inputNotInRange =QtWidgets.QErrorMessage()
+		self.warning_suggestedRange1800 = Error_Message("Warning: Range Suggestion")
+		self.warning_suggestedRange1800.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange1800.setChecked(True)
+		
+		self.warning_suggestedRange600 = Error_Message("Warning: Range Suggestion")
+		self.warning_suggestedRange600.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange600.setChecked(True)
+		
+		self.error_inputNotNum = Error_Message('Not Number Error')
+		self.error_inputNotInRange = Error_Message('Not In Range Error')
+
 		
 	def busytext_progressbar(self):
 		print("basic thread starting")
@@ -152,13 +236,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	###funtions/slots 
 	def applysettings(self):
 		print('Applying Settings!')
-		self.busytext_progressbar()
-		
-		self.progressBar.reset()
-		self.progressBar.setFormat('Applying Settings!')
-		self.progressBar.setValue(10)
 		#time.sleep(1.8)
-		
+		self.busytext_progressbar()		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
@@ -179,35 +258,60 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.error_inputNotNum.done(1) #delete error message
 		if not (self.is_number(self.lowerWavelen_nm) and  self.is_number(self.upperWavelen_nm)):
 			print('Displaying Error Message')
-			self.error_inputNotNum.showMessage("ERROR: Wavelength input is not a number!") #make/remake error message
+			self.error_inputNotNum.setText("ERROR: Wavelength input is not a number!")
+			self.error_inputNotNum.setIcon(QMessageBox.Critical)			
+			self.error_inputNotNum.exec() #make/remake error message
 			#self.error_dialog.activateWindow()
 			
 			return #do not continue to calculations
-			
-		self.lowerWavelen_nm = float(self.lowerWavelen_nm) #We all float down here
-		self.upperWavelen_nm = float(self.upperWavelen_nm)			
-		
+		else:
+			self.lowerWavelen_nm = float(self.lowerWavelen_nm)
+			self.upperWavelen_nm = float(self.upperWavelen_nm)
 			
 		self.error_inputNotInRange.done(1) #delete error message
 		if self.lowerWavelen_nm < 0:
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("ERROR: Wavelength input must be a positive number!") #make/remake error message
+			#self.error_inputNotInRange.setChecked(False)
+			self.error_inputNotInRange.setText("ERROR: Wavelength input must be a positive number!")
+			self.error_inputNotInRange.setIcon(QMessageBox.Critical)
+			self.error_inputNotInRange.exec() #make/remake error message
 			return #do not continue to calculations and settings application	
 			
 		elif self.lowerWavelen_nm >= self.upperWavelen_nm: #make sure  lower is less than upper
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("ERROR: Lower wavelength input must be less than upper wavelength input!") #make/remake error message
+			
+			self.error_inputNotInRange.setText("ERROR: Lower wavelength input must be less than upper wavelength input!")
+			self.error_inputNotInRange.setIcon(QMessageBox.Critical)
+
+			self.error_inputNotInRange.exec() #make/remake error message
 			return #do not continue to calculations and settings application
 			
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 870) and self.grating == '1800 l/mm (Vis)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			
+			self.warning_suggestedRange1800.setText("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use!\n\nUncheck the box below and exit or press 'OK' if you would like to continue with your current input.")
+			self.warning_suggestedRange1800.setIcon(QMessageBox.Warning)
+			
+			if self.warning_suggestedRange1800.checkBox.isChecked() == False:
+				self.warning_suggestedRange1800.exec() #only execute the error message if the error box is unchecked
+					
 			return #do not continue to calculations and settings application
 		
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			self.warning_suggestedRange600.setText("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use!\n\nUncheck the box below and exit or press 'OK' if you would like to continue with your current input.") #make/remake error message
+			self.warning_suggestedRange600.setIcon(QMessageBox.Warning)
+			if self.warning_suggestedRange600.checkBox.isChecked() == False:
+				self.warning_suggestedRange600.exec() #make/remake error message		
+			
 			return #do not continue to calculations and settings application
+		
+		#If pass all errors then update progress bar and proceed to calculations
+		self.busytext_progressbar()
+
+		self.progressBar.reset()
+		self.progressBar.setFormat('Applying Settings!')
+		self.progressBar.setValue(10)
 		
 		self.lowerWave_steps, self.upperWave_steps = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen_nm), self.convert_NMtoSTEPS(self.grating, self.upperWavelen_nm)]
 		self.stepFactor_nm_step = self.convert_NMtoSTEPS(self.grating, getFactor = True) #setting getFactor param to true returns the step factor of the given grating
@@ -231,7 +335,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		print('Thread is finished!')
 		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
 		self.progressBar.setValue(100)
-		self.busyMessageThread.triggerFinish()
+		self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
+		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread
+		self.busyMessageThread.triggerFinish(busy = True) #reset thread for next use
 
 
 		
