@@ -105,7 +105,7 @@ class SetScan_Thread(QThread):
 	
 	def run(self):
 		time.sleep(5)
-		#responseApply = self.spectrometer.startScan()
+		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
 		#print("Apply Settings Response: ", responseApply)
 		responseApply = True
 		if responseApply:
@@ -116,12 +116,12 @@ class SetScan_Thread(QThread):
 class StartScan_Thread(QThread):
 	actionSignal = pyqtSignal()
 	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
-		super(SetScan_Thread, self).__init__(parent)
+		super(StartScan_Thread, self).__init__(parent)
 		self.spectrometer = spectrometer
 		self.lowerWave_steps = lowerWave_steps
 		self.upperWave_steps = upperWave_steps
-		self.grating = self.grating
-		self.stepIncrement_steps = self.sstepIncrement_steps
+		self.grating = grating
+		self.stepIncrement_steps = stepIncrement_steps
 
 		
 	
@@ -353,16 +353,16 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
 		self.progressBar.setValue(60)
 		
-		self.setscan_thread = SetScan_Thread(self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread = SetScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
 		self.setscan_thread.start()
 		#time.sleep(5)
 		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
 		#self.setscan_thread.quit()
 		#self.setscan_thread.wait()
-		self.setscan_thread.finished.connect(self.threadFinished)
+		self.setscan_thread.finished.connect(self.applythreadFinished)
 	
-	def threadFinished(self):
+	def applythreadFinished(self):
 		print('Thread is finished!')
 		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
 		self.progressBar.setValue(100)
@@ -377,8 +377,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		canvas = Canvas(self, width=8, height=4)
 		self.subLayoutA.addWidget(canvas)
 		self.plot_subwindowA.show()
-		#startScan_thread = StartScan_Thread('spectrometer', lowerWave_steps, upperWave_steps, grating, stepIncrement_steps)
+		self.startScan_thread = StartScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
 		#self.spectrometer.startScan()
+		self.startScan_thread.finished.connect(self.startThreadFinished)
+	
+	def startThreadFinished(self):
+		canvas = Canvas(self, width=8, height=4)
+		self.subLayoutA.addWidget(canvas)
+		self.plot_subwindowA.show()
 		
 	def endscan(self):
 		print('Ending Scan!')
