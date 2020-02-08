@@ -5,10 +5,31 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 #import matplotlib
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 import numpy as np
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
 import time
+
+class Canvas(FigureCanvas):
+	def __init__(self, parent = None, width = 5, height = 5, dpi = 100):
+		fig = Figure(figsize=(width, height), dpi=dpi)
+		self.axes = fig.add_subplot(111)
+ 
+		FigureCanvas.__init__(self, fig)
+		self.setParent(parent)
+ 
+		self.plot()
+ 
+ 
+	def plot(self):
+		x = np.array([50, 30,40])
+		y = [1, 2, 3]
+		ax = self.figure.add_subplot(111)
+		ax.plot(x, y)
+ 
 
 class Error_Message(QMessageBox):
 	def __init__(self, title, text = 'Error', checked = False, parent = None):
@@ -67,11 +88,13 @@ class BusyDots_Thread(QThread):
 		return
 class SetScan_Thread(QThread):
 	actionSignal = pyqtSignal()
-	def __init__(self, lowStep, highStep, stepIncrement_steps, intTime, entSize, exitSize, gain, grating ,detector , parent = None):
+	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
 		super(SetScan_Thread, self).__init__(parent)
-		self.lowStep = lowStep
-		self.highStep = highStep
-		self.stepIncrement = stepIncrement_steps
+		
+		self.spectrometer = spectrometer
+		self.lowerWave_steps = lowerWave_steps
+		self.upperWave_steps = upperWave_steps
+		self.stepIncrement_steps = stepIncrement_steps
 		self.intTime = intTime
 		self.entSize = entSize
 		self.exitSize = exitSize
@@ -82,7 +105,7 @@ class SetScan_Thread(QThread):
 	
 	def run(self):
 		time.sleep(5)
-		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.extSize/12.5)),str(self.gain),self.grating,self.detector,'3',str(self.gratingPos),str(self.incTime),str(self.totalTime)):
+		#responseApply = self.spectrometer.startScan()
 		#print("Apply Settings Response: ", responseApply)
 		responseApply = True
 		if responseApply:
@@ -92,17 +115,14 @@ class SetScan_Thread(QThread):
 		
 class StartScan_Thread(QThread):
 	actionSignal = pyqtSignal()
-	def __init__(self, parent = None):
+	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
 		super(SetScan_Thread, self).__init__(parent)
-		self.lowStep
-		self.highStep
-		self.stepIncrement
-		self.intTime
-		self.entSize
-		self.exitSize
-		self.gain
-		self.grating
-		self.detector
+		self.spectrometer = spectrometer
+		self.lowerWave_steps = lowerWave_steps
+		self.upperWave_steps = upperWave_steps
+		self.grating = self.grating
+		self.stepIncrement_steps = self.sstepIncrement_steps
+
 		
 	
 	def run(self):
@@ -126,6 +146,19 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.mdiArea = mdiArea
 		self.spectrometer = spectrometer
 		self.subwindow_dict = subwindow_dict
+		
+				
+		
+		###subwindows
+		#CoreWindow subwindows
+		self.mainmenu_sub = self.subwindow_dict['mainmenu']
+		self.tbsmenu_sub = self.subwindow_dict['tbsmenu']
+		
+		#scanning plot subwindows
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowD)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowC)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowB)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowA)
 		
 		#Thread Definitions
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
@@ -153,11 +186,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.menuGrating.triggered[QAction].connect(self.menuBar_action)
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
 		
-		
-		
-		#subwindows
-		self.mainmenu_sub = self.subwindow_dict['mainmenu']
-		self.tbsmenu_sub = self.subwindow_dict['tbsmenu']
+		#subwindow control options
+		self.menu_SubwindowPlots.triggered[QAction].connect(self.menuBar_action)
+		self.subPlotOptions = [self.actionTiled, self.actionCascade, self.actionPlotA, self.actionPlotB, self.actionPlotC, self.actionPlotD]
 		
 		###sliders 
 		#Signals
@@ -343,6 +374,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 	def startscan(self):
 		print('Starting Scan!')
+		canvas = Canvas(self, width=8, height=4)
+		self.subLayoutA.addWidget(canvas)
+		self.plot_subwindowA.show()
+		#startScan_thread = StartScan_Thread('spectrometer', lowerWave_steps, upperWave_steps, grating, stepIncrement_steps)
 		#self.spectrometer.startScan()
 		
 	def endscan(self):
@@ -436,6 +471,30 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 					act.setChecked(False)
 					
 			action.setChecked(True)
+			
+		elif action in self.subPlotOptions:
+			if action == self.actionCascade:
+				self.sub_mdiArea.cascadeSubWindows()
+				print('cascade triggered')
+
+			elif action == self.actionTiled:
+				self.sub_mdiArea.tileSubWindows()
+				print('tiled triggered')
+			
+			elif action == self.actionPlotA:
+				print('set view to subwindow plot A')
+			elif action == self.actionPlotB:
+				print('set view to subwindow plot B')
+			elif action == self.actionPlotC:
+				print('set view to subwindow plot C')
+			elif action == self.actionPlotD:
+				print('set view to subwindow plot D')
+				
+			for act in self.subPlotOptions:
+				if act.isChecked():
+					act.setChecked(False)
+			action.setChecked(True)				
+			
 			
 			
 	def convert_NMtoSTEPS(self, grating, nm_val = 0, getFactor = False):

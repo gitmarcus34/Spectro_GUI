@@ -42,6 +42,11 @@
           <height>900</height>
          </size>
         </property>
+        <widget class="QWidget" name="subwindow">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+        </widget>
        </widget>
       </item>
       <item row="0" column="1">

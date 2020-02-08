@@ -32,6 +32,8 @@ class Ui_TBSMenu(object):
         self.sub_mdiArea = QtWidgets.QMdiArea(self.centralwidget)
         self.sub_mdiArea.setMaximumSize(QtCore.QSize(1500, 900))
         self.sub_mdiArea.setObjectName("sub_mdiArea")
+        self.subwindow = QtWidgets.QWidget()
+        self.subwindow.setObjectName("subwindow")
         self.gridLayout_7.addWidget(self.sub_mdiArea, 0, 0, 1, 1)
         self.label_7 = QtWidgets.QLabel(self.centralwidget)
         self.label_7.setText("")
@@ -310,6 +312,7 @@ class Ui_TBSMenu(object):
     def retranslateUi(self, TBSMenu):
         _translate = QtCore.QCoreApplication.translate
         TBSMenu.setWindowTitle(_translate("TBSMenu", "Scanning Menu"))
+        self.subwindow.setWindowTitle(_translate("TBSMenu", "Subwindow"))
         self.ExportPNG_Button.setText(_translate("TBSMenu", "Export PNG"))
         self.ExportJPG_Button.setText(_translate("TBSMenu", "Export JPG"))
         self.ExportCSV_Button.setText(_translate("TBSMenu", "Export CSV"))

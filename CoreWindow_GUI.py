@@ -83,6 +83,7 @@ class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 			
 		if action == self.actioncascade:
 			self.mdiArea.cascadeSubWindows()
+			print('cascade triggered')
 
 		if action == self.actiontiled:
 			self.mdiArea.tileSubWindows()

@@ -2002,8 +2002,8 @@ class timeBaseScanning(tk.Frame):
 		response = a.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime))
 		print("Apply Settings Response: ", response)
 		if response == 0:
-            return
-        self.startButton.configure(state=NORMAL)
+			return
+		self.startButton.configure(state=NORMAL)
 		   
 
 	def startScanButton(self):

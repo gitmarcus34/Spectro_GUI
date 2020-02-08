@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1079</width>
-    <height>632</height>
+    <width>1073</width>
+    <height>592</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -71,10 +71,50 @@
        <widget class="QMdiArea" name="sub_mdiArea">
         <property name="maximumSize">
          <size>
-          <width>700</width>
+          <width>1100</width>
           <height>900</height>
          </size>
         </property>
+        <widget class="QWidget" name="plot_subwindowA">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutA"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowB">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutB"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowC">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_12">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutC"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowD">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_14">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutD"/>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -487,7 +527,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1079</width>
+     <width>1073</width>
      <height>26</height>
     </rect>
    </property>
@@ -528,11 +568,23 @@
     <addaction name="action1800Grating"/>
     <addaction name="action600Grating"/>
    </widget>
+   <widget class="QMenu" name="menu_SubwindowPlots">
+    <property name="title">
+     <string>Subwindow Plots</string>
+    </property>
+    <addaction name="actionTiled"/>
+    <addaction name="actionCascade"/>
+    <addaction name="actionPlotA"/>
+    <addaction name="actionPlotB"/>
+    <addaction name="actionPlotC"/>
+    <addaction name="actionPlotD"/>
+   </widget>
    <addaction name="menuMain"/>
    <addaction name="menuScan"/>
    <addaction name="menuDetector"/>
    <addaction name="menuGain"/>
    <addaction name="menuGrating"/>
+   <addaction name="menu_SubwindowPlots"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTimeMenu">
@@ -641,6 +693,51 @@
    </property>
    <property name="text">
     <string>600 l/mm (IR)</string>
+   </property>
+  </action>
+  <action name="actionTiled">
+   <property name="text">
+    <string>tiled</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>cascade</string>
+   </property>
+  </action>
+  <action name="actionPlotA">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view plotA</string>
+   </property>
+  </action>
+  <action name="actionPlotB">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view plotB</string>
+   </property>
+  </action>
+  <action name="actionPlotC">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view plotC</string>
+   </property>
+  </action>
+  <action name="actionPlotD">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view plotB</string>
    </property>
   </action>
  </widget>
