@@ -3,10 +3,12 @@ import sys # We need sys so that we can pass argv to QApplication
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-#import matplotlib
+from matplotlib import pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+import random
 
 import numpy as np
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
@@ -15,17 +17,23 @@ import time
 
 class Canvas(FigureCanvas):
 	def __init__(self, parent = None, width = 5, height = 5, dpi = 100):
-		fig = Figure(figsize=(width, height), dpi=dpi)
-		self.axes = fig.add_subplot(111)
- 
-		FigureCanvas.__init__(self, fig)
+		self.figure = Figure(figsize=(width, height), dpi=dpi)
+		self.axes = self.figure.add_subplot(111)
+
+		FigureCanvas.__init__(self, self.figure)
 		self.setParent(parent)
  
 		self.plot()
- 
+	
+	def getFigure(self):
+		"""return the figure so that we could export it as png/jpg
+		"""
+		return self.figure	
  
 	def plot(self):
-		x = np.array([50, 30,40])
+		randNum = random.random()
+		print(randNum)
+		x = np.array([random.random(), random.random(),random.random()])
 		y = [1, 2, 3]
 		ax = self.figure.add_subplot(111)
 		ax.plot(x, y)
@@ -147,7 +155,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.spectrometer = spectrometer
 		self.subwindow_dict = subwindow_dict
 		
-				
+
+		###plots
+		self.actions_figures ={}
 		
 		###subwindows
 		#CoreWindow subwindows
@@ -382,7 +392,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#self.plot_subwindowA.show()
 		self.startScan_thread = StartScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
 		self.startScan_thread.start()
-		#self.spectrometer.startScan()
+
 		self.startScan_thread.finished.connect(self.startThreadFinished)
 	
 	def startThreadFinished(self):
@@ -390,16 +400,34 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		for action in self.subPlotOptions:
 			if action.isChecked():
 				canvas = Canvas(self, width=8, height=4)
+				
+				if action in self.actions_figures:
+					oldCanvas = self.actions_figures[action][-1]
+					self.subPlotOptions[action].removeWidget(oldCanvas)
+				
 				self.subPlotOptions[action].addWidget(canvas)
 				
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				if action in self.actions_figures:
+					self.actions_figures[action].append(canvas)
+				else:
+					self.actions_figures[action] = [canvas]
+				
 	def exportPNG(self):
-		self.saveFileDialog('.PNG')
+		fileName = self.saveFileDialog('.PNG')
+		#figure = self.canvas.getFigure()
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				figure = self.actions_figures[action][-1].getFigure()
+		figure.savefig(fileName)
 		
 	def exportJPG(self):
 		self.saveFileDialog('.JPG')
 		
 	def exportCSV(self):
 		self.saveFileDialog('.CSV')
+		
 	
 	def saveFileDialog(self, fileType):
 		options = QFileDialog.Options()
@@ -415,6 +443,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Images (*.JPG)", options=options)
 		if fileName:
 			print(fileName)
+			return fileName
 		else:
 			print('Did not specify name type for saveFileDialog function')
 		
@@ -530,7 +559,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				print('set view to subwindow plot D')
 				
 			for act in self.subPlotOptions:
-				if act.isChecked() and (action != self.actionTiled or action != self.actionCascade):
+				if act.isChecked() and (action != self.actionTiled and action != self.actionCascade):
 					act.setChecked(False)
 			action.setChecked(True)				
 			
