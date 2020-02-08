@@ -16,12 +16,16 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 import time
 
 class Canvas(FigureCanvas):
-	def __init__(self, parent = None, width = 5, height = 5, dpi = 100):
+	def __init__(self, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
 		self.figure = Figure(figsize=(width, height), dpi=dpi)
 		self.axes = self.figure.add_subplot(111)
 
 		FigureCanvas.__init__(self, self.figure)
 		self.setParent(parent)
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.stepIncrement = stepIncrement
+		self.intTime = intTime
  
 		self.plot()
 	
@@ -37,6 +41,10 @@ class Canvas(FigureCanvas):
 		y = [1, 2, 3]
 		ax = self.figure.add_subplot(111)
 		ax.plot(x, y)
+		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
+
+		ax.set_xlabel('Wavelength')
+		ax.set_ylabel('Intensity')
  
 
 class Error_Message(QMessageBox):
@@ -272,10 +280,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 	def sliderStepSize_Change(self, slider_val):
 		stepFactor = self.convert_NMtoSTEPS(self.grating, getFactor = True)
-		incremented_val = float(slider_val*stepFactor)
+		self.incremented_val = float(slider_val*stepFactor)
 		
 		#display step sizes in increments of the step factor for the given grating
-		self.lcdNum_StepSizeSlider.display(incremented_val)
+		self.lcdNum_StepSizeSlider.display(self.incremented_val)
 	
 	###funtions/slots 
 	def applysettings(self):
@@ -399,7 +407,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		print('scan complete!')
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(self, width=8, height=4)
+				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures:
 					oldCanvas = self.actions_figures[action][-1]
