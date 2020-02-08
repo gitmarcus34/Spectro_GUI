@@ -350,9 +350,9 @@ class Ui_ScanningMenu(object):
     def retranslateUi(self, ScanningMenu):
         _translate = QtCore.QCoreApplication.translate
         ScanningMenu.setWindowTitle(_translate("ScanningMenu", "Scanning Menu"))
-        self.ExportPNG_Button.setText(_translate("ScanningMenu", "Export PNG"))
-        self.ExportJPG_Button.setText(_translate("ScanningMenu", "Export JPG"))
-        self.ExportCSV_Button.setText(_translate("ScanningMenu", "Export CSV"))
+        self.ExportPNG_Button.setText(_translate("ScanningMenu", "Export Plot: PNG"))
+        self.ExportJPG_Button.setText(_translate("ScanningMenu", "Export Plot: JPG"))
+        self.ExportCSV_Button.setText(_translate("ScanningMenu", "Export Data: CSV"))
         self.PlotOptions_Button.setText(_translate("ScanningMenu", "Plot Options"))
         self.plot_subwindowA.setWindowTitle(_translate("ScanningMenu", "Subwindow"))
         self.plot_subwindowB.setWindowTitle(_translate("ScanningMenu", "Subwindow"))
@@ -398,10 +398,10 @@ class Ui_ScanningMenu(object):
         self.action600Grating.setText(_translate("ScanningMenu", "600 l/mm (IR)"))
         self.actionTiled.setText(_translate("ScanningMenu", "tiled"))
         self.actionCascade.setText(_translate("ScanningMenu", "cascade"))
-        self.actionPlotA.setText(_translate("ScanningMenu", "add/view plotA"))
-        self.actionPlotB.setText(_translate("ScanningMenu", "add/view plotB"))
-        self.actionPlotC.setText(_translate("ScanningMenu", "add/view plotC"))
-        self.actionPlotD.setText(_translate("ScanningMenu", "add/view plotB"))
+        self.actionPlotA.setText(_translate("ScanningMenu", "add/view/set plotA"))
+        self.actionPlotB.setText(_translate("ScanningMenu", "add/view/set plotB"))
+        self.actionPlotC.setText(_translate("ScanningMenu", "add/view/set plotC"))
+        self.actionPlotD.setText(_translate("ScanningMenu", "add/view/set plotB"))
 
 
 if __name__ == "__main__":

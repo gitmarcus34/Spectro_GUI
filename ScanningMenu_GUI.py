@@ -160,6 +160,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.sub_mdiArea.addSubWindow(self.plot_subwindowB)
 		self.sub_mdiArea.addSubWindow(self.plot_subwindowA)
 		
+		self.plot_subwindowA.setWindowTitle('Plot Subwindow A')
+		self.plot_subwindowB.setWindowTitle('Plot Subwindow B')
+		self.plot_subwindowC.setWindowTitle('Plot Subwindow C')
+		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
 		#Thread Definitions
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
 		
@@ -224,11 +228,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#signals
 		self.ApplySettings_Button.clicked.connect(self.applysettings)
 		self.StartScan_Button.clicked.connect(self.startscan)
-		#self.EndScan_Button.clicked.connect(self.endscan)
 		self.EndScan_Button.clicked.connect(self.endscan)
-		
-		#spectrometer initialize button (use upon HR460 power up for spectrometer to be calibrated to base grating.)
-		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
+		self.ExportPNG_Button.clicked.connect(self.exportPNG)
+		self.ExportJPG_Button.clicked.connect(self.exportJPG)
+		self.ExportCSV_Button.clicked.connect(self.exportCSV)
 		
 		###Error Messages
 		self.warning_suggestedRange1800 = Error_Message("Warning: Range Suggestion")
@@ -388,6 +391,33 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			if action.isChecked():
 				canvas = Canvas(self, width=8, height=4)
 				self.subPlotOptions[action].addWidget(canvas)
+				
+	def exportPNG(self):
+		self.saveFileDialog('.PNG')
+		
+	def exportJPG(self):
+		self.saveFileDialog('.JPG')
+		
+	def exportCSV(self):
+		self.saveFileDialog('.CSV')
+	
+	def saveFileDialog(self, fileType):
+		options = QFileDialog.Options()
+		options |= QFileDialog.DontUseNativeDialog
+		
+		if fileType == '.CSV':
+			fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","CSV file (*.csv)", options=options)
+			
+		elif fileType == '.PNG':
+			fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Images (*.PNG)", options=options)
+			
+		elif fileType == '.JPG':
+			fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Images (*.JPG)", options=options)
+		if fileName:
+			print(fileName)
+		else:
+			print('Did not specify name type for saveFileDialog function')
+		
 		
 	def endscan(self):
 		print('Ending Scan!')
@@ -500,7 +530,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				print('set view to subwindow plot D')
 				
 			for act in self.subPlotOptions:
-				if act.isChecked():
+				if act.isChecked() and (action != self.actionTiled or action != self.actionCascade):
 					act.setChecked(False)
 			action.setChecked(True)				
 			

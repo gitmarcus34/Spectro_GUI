@@ -29,7 +29,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="text">
-         <string>Export PNG</string>
+         <string>Export Plot: PNG</string>
         </property>
        </widget>
       </item>
@@ -39,7 +39,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="text">
-         <string>Export JPG</string>
+         <string>Export Plot: JPG</string>
         </property>
        </widget>
       </item>
@@ -49,7 +49,7 @@
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="text">
-         <string>Export CSV</string>
+         <string>Export Data: CSV</string>
         </property>
        </widget>
       </item>
@@ -713,7 +713,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>add/view plotA</string>
+    <string>add/view/set plotA</string>
    </property>
   </action>
   <action name="actionPlotB">
@@ -721,7 +721,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>add/view plotB</string>
+    <string>add/view/set plotB</string>
    </property>
   </action>
   <action name="actionPlotC">
@@ -729,7 +729,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>add/view plotC</string>
+    <string>add/view/set plotC</string>
    </property>
   </action>
   <action name="actionPlotD">
@@ -737,7 +737,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>add/view plotB</string>
+    <string>add/view/set plotB</string>
    </property>
   </action>
  </widget>
