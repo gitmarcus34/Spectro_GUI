@@ -104,7 +104,7 @@ class SetScan_Thread(QThread):
 		
 	
 	def run(self):
-		time.sleep(5)
+		time.sleep(2)
 		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
 		#print("Apply Settings Response: ", responseApply)
 		responseApply = True
@@ -127,7 +127,7 @@ class StartScan_Thread(QThread):
 	
 	def run(self):
 		print('Scan started!')
-		time.sleep(5)
+		time.sleep(2)
 		#response = self.spectrometer.startScan()
 		response = True
 		if response == 0: #check if scan has ended
@@ -188,7 +188,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		#subwindow control options
 		self.menu_SubwindowPlots.triggered[QAction].connect(self.menuBar_action)
-		self.subPlotOptions = [self.actionTiled, self.actionCascade, self.actionPlotA, self.actionPlotB, self.actionPlotC, self.actionPlotD]
+		self.subPlotOptions = {self.actionTiled: 'tiled', self.actionCascade: 'cascade', self.actionPlotA: self.subLayoutA, self.actionPlotB: self.subLayoutB, self.actionPlotC: self.subLayoutC, self.actionPlotD: self.subLayoutD}
 		
 		###sliders 
 		#Signals
@@ -374,17 +374,20 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 	def startscan(self):
 		print('Starting Scan!')
-		canvas = Canvas(self, width=8, height=4)
-		self.subLayoutA.addWidget(canvas)
-		self.plot_subwindowA.show()
+		#canvas = Canvas(self, width=8, height=4)
+		#self.subLayoutA.addWidget(canvas)
+		#self.plot_subwindowA.show()
 		self.startScan_thread = StartScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
+		self.startScan_thread.start()
 		#self.spectrometer.startScan()
 		self.startScan_thread.finished.connect(self.startThreadFinished)
 	
 	def startThreadFinished(self):
-		canvas = Canvas(self, width=8, height=4)
-		self.subLayoutA.addWidget(canvas)
-		self.plot_subwindowA.show()
+		print('scan complete!')
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				canvas = Canvas(self, width=8, height=4)
+				self.subPlotOptions[action].addWidget(canvas)
 		
 	def endscan(self):
 		print('Ending Scan!')
