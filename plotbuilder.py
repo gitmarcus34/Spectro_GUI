@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 from matplotlib import style
 import time
 import noiseFilter
-class animatedPlot:
+class AnimatedPlot:
 	def __init__(self):
 		style.use('fivethirtyeight')
 
@@ -33,7 +33,7 @@ class animatedPlot:
 
 	def runAnimate(self, animTime = 20):
 		ani = animation.FuncAnimation(self.fig, self.animate, interval=100)
-		plt.show()
+		self.fig.draw()
 		
 		time.sleep(animTime)
 		self.anim.event_source.stop()

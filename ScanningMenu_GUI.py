@@ -28,6 +28,7 @@ class Canvas(FigureCanvas):
 		self.intTime = intTime
  
 		self.plot()
+		
 	
 	def getFigure(self):
 		"""return the figure so that we could export it as png/jpg
@@ -409,7 +410,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#create a canvas for the designated plot (designate by choosing the corresponding option in 'subwindow_plots drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
+				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.z, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures:
 					oldCanvas = self.actions_figures[action][-1]

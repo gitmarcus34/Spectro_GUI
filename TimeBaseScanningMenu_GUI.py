@@ -3,45 +3,41 @@ import sys # We need sys so that we can pass argv to QApplication
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from matplotlib import pyplot as plt
+
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib import style
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import matplotlib.animation as animation
 
 import numpy as np
-
 import time
 
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
-			  
-class Canvas(FigureCanvas, QThread):
-	def __init__(self, entSize, exitSize, intTime, width = 5, height = 5, dpi = 100, parent = None):
+
+	
+class AnimatedPlot(FigureCanvas):
+	def __init__(self):
+		width = 8
+		height = 4
+		dpi = 100
+		parent = None
 		self.figure = Figure(figsize=(width, height), dpi=dpi)
-		self.ax = self.figure.add_subplot(111)
+		self.axes = self.figure.add_subplot(111)
 
 		FigureCanvas.__init__(self, self.figure)
-		self.setParent(parent)
-		self.entSize = entSize
-		self.exitSize = exitSize
-		self.intTime = intTime
-		
-		self.ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms'.format(self.entSize, self.exitSize, self.intTime))
-		self.ax.set_xlabel('Wavelength')
-		self.ax.set_ylabel('Intensity')
- 
-	
-	def getFigure(self):
-		"""return the figure so that we could export it as png/jpg
-		"""
-		return self.figure	
-		
+		self.animate(0)
+		self.animate(0)
+		#self.setParent(parent)
+
 	def animate(self, i):
 		graph_data = open('realTimeData.csv','r').read()
 		lines = graph_data.split('\n')
 		positions = []
 		intensities = []
+		print('animating')
 
 		for line in lines:
 			if len(line) > 1:
@@ -50,17 +46,33 @@ class Canvas(FigureCanvas, QThread):
 				intensities.append(float(intensity))
 
 				#intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
-		self.ax.clear()
-		self.ax.plot(positions, intensities)
+		self.axes.clear()
+		self.axes.plot(positions, intensities)
 
- 
-	def run(self):		
+
+	def runAnimate(self, animTime = 20):
+		print('start to animate')
 		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
-		plt.show()
+		
+		
 
-		
-		
 			  
+
+class SetScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		
+	
+	def run(self):
+		time.sleep(2)
+		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
+		#print("Apply Settings Response: ", responseApply)
+		responseApply = True
+		if responseApply:
+			print('Settings Applied - Ready to start scan!') 
+		return
+
 class SetScan_Thread(QThread):
 	actionSignal = pyqtSignal()
 	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
@@ -350,8 +362,12 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
 		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread
 		
-		canvas = Canvas(self.entSize, self.exitSize, self.intTime, width=8, height=4, parent = self)
-		self.subLayoutA.addWidget(canvas)
+		#canvas = Canvas(self.entSize, self.exitSize, self.intTime, width=8, height=4, parent = self)
+		#self.subLayoutA.addWidget(canvas)
+		
+		anim = AnimatedPlot()
+		self.subLayoutA.addWidget(anim)
+		#anim.runAnimate()
 		
 	def startscan(self):
 		"""Slot for StartScan_Button
