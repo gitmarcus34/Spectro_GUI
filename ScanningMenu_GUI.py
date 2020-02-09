@@ -405,6 +405,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	
 	def startThreadFinished(self):
 		print('scan complete!')
+		
+		#create a canvas for the designated plot (designate by choosing the corresponding option in 'subwindow_plots drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
 				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
@@ -414,7 +416,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 					self.subPlotOptions[action].removeWidget(oldCanvas)
 				
 				self.subPlotOptions[action].addWidget(canvas)
-				
+		
+		#add the canvas to the action_figures dictionary mapping
 		for action in self.subPlotOptions:
 			if action.isChecked():
 				if action in self.actions_figures:
