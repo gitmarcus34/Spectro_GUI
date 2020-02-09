@@ -254,14 +254,19 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		###Error Messages
 		self.warning_suggestedRange1800 = Error_Message("Warning: Range Suggestion")
 		self.warning_suggestedRange1800.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange1800.setIcon(QMessageBox.Warning)
 		self.warning_suggestedRange1800.setChecked(True)
 		
 		self.warning_suggestedRange600 = Error_Message("Warning: Range Suggestion")
 		self.warning_suggestedRange600.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange600.setIcon(QMessageBox.Warning)
 		self.warning_suggestedRange600.setChecked(True)
 		
 		self.error_inputNotNum = Error_Message('Not Number Error')
+		self.error_inputNotNum.setIcon(QMessageBox.Critical)
+		
 		self.error_inputNotInRange = Error_Message('Not In Range Error')
+		self.error_inputNotInRange.setIcon(QMessageBox.Critical)
 
 		
 	def busytext_progressbar(self):
@@ -310,8 +315,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.error_inputNotNum.done(1) #delete error message
 		if not (self.is_number(self.lowerWavelen_nm) and  self.is_number(self.upperWavelen_nm)):
 			print('Displaying Error Message')
-			self.error_inputNotNum.setText("ERROR: Wavelength input is not a number!")
-			self.error_inputNotNum.setIcon(QMessageBox.Critical)			
+			self.error_inputNotNum.setText("ERROR: Wavelength input is not a number!")			
 			self.error_inputNotNum.exec() #make/remake error message
 			#self.error_dialog.activateWindow()
 			
@@ -325,7 +329,6 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			print('Displaying Error Message')
 			#self.error_inputNotInRange.setChecked(False)
 			self.error_inputNotInRange.setText("ERROR: Wavelength input must be a positive number!")
-			self.error_inputNotInRange.setIcon(QMessageBox.Critical)
 			self.error_inputNotInRange.exec() #make/remake error message
 			return #do not continue to calculations and settings application	
 			
@@ -333,8 +336,6 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			print('Displaying Error Message')
 			
 			self.error_inputNotInRange.setText("ERROR: Lower wavelength input must be less than upper wavelength input!")
-			self.error_inputNotInRange.setIcon(QMessageBox.Critical)
-
 			self.error_inputNotInRange.exec() #make/remake error message
 			return #do not continue to calculations and settings application
 			
@@ -342,7 +343,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			print('Displaying Error Message')
 			
 			self.warning_suggestedRange1800.setText("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use!\n\nUncheck the box below and exit or press 'OK' if you would like to continue with your current input.")
-			self.warning_suggestedRange1800.setIcon(QMessageBox.Warning)
+
 			
 			if self.warning_suggestedRange1800.checkBox.isChecked() == False:
 				self.warning_suggestedRange1800.exec() #only execute the error message if the error box is unchecked
@@ -352,7 +353,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
 			self.warning_suggestedRange600.setText("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use!\n\nUncheck the box below and exit or press 'OK' if you would like to continue with your current input.") #make/remake error message
-			self.warning_suggestedRange600.setIcon(QMessageBox.Warning)
+
 			if self.warning_suggestedRange600.checkBox.isChecked() == False:
 				self.warning_suggestedRange600.exec() #make/remake error message		
 			

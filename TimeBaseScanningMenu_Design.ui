@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1298</width>
-    <height>709</height>
+    <width>1329</width>
+    <height>686</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,184 +32,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_5">
-    <item row="2" column="2">
-     <layout class="QGridLayout" name="gridLayout_7">
-      <item row="0" column="0">
-       <widget class="QMdiArea" name="sub_mdiArea">
-        <property name="maximumSize">
-         <size>
-          <width>1500</width>
-          <height>900</height>
-         </size>
-        </property>
-        <widget class="QWidget" name="subwindow">
-         <property name="windowTitle">
-          <string>Subwindow</string>
-         </property>
-        </widget>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>tbsDiagram.jpg</pixmap>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="3" column="2">
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <item>
-       <widget class="QPushButton" name="ExportPNG_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export PNG</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="ExportJPG_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export JPG</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="ExportCSV_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export CSV</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="PlotOptions_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Plot Options</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="4" column="2">
-     <widget class="QProgressBar" name="progressBar">
-      <property name="font">
-       <font>
-        <family>Cambria</family>
-        <pointsize>10</pointsize>
-        <weight>75</weight>
-        <italic>true</italic>
-        <bold>true</bold>
-        <underline>false</underline>
-        <strikeout>false</strikeout>
-        <kerning>false</kerning>
-       </font>
-      </property>
-      <property name="value">
-       <number>24</number>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="invertedAppearance">
-       <bool>false</bool>
-      </property>
-      <property name="format">
-       <string>busy</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <widget class="QPushButton" name="ApplySettings_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Apply Settings</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="StartScan_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Start Scan</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="EndScan_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>End Scan</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Wavelength:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QLabel" name="MenuLabel">
-      <property name="font">
-       <font>
-        <family>Lucida Bright</family>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <italic>false</italic>
-        <bold>true</bold>
-        <underline>true</underline>
-       </font>
-      </property>
-      <property name="text">
-       <string>Time Base Scanning</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
+    <item row="2" column="1">
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="4" column="2">
        <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -336,6 +159,9 @@
         <property name="cursor">
          <cursorShape>SizeHorCursor</cursorShape>
         </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -449,7 +275,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Time Increment</string>
+         <string>Time Increment*</string>
         </property>
        </widget>
       </item>
@@ -482,7 +308,7 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
+    <item row="1" column="1">
      <layout class="QGridLayout" name="gridLayout_9">
       <item row="1" column="0">
        <widget class="QLineEdit" name="wavelength_input">
@@ -509,6 +335,246 @@
       </item>
      </layout>
     </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Wavelength:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <item>
+       <widget class="QPushButton" name="ApplySettings_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Apply Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="StartScan_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Start Scan</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="EndScan_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>End Scan</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLabel" name="MenuLabel">
+      <property name="font">
+       <font>
+        <family>Lucida Bright</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <italic>false</italic>
+        <bold>true</bold>
+        <underline>true</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Time Base Scanning</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <layout class="QHBoxLayout" name="horizontalLayout_6">
+      <item>
+       <widget class="QPushButton" name="ExportPNG_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export PNG</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ExportJPG_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export JPG</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ExportCSV_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export CSV</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="PlotOptions_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Plot Options</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="3">
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="0" column="0">
+       <widget class="QMdiArea" name="sub_mdiArea">
+        <property name="maximumSize">
+         <size>
+          <width>1500</width>
+          <height>900</height>
+         </size>
+        </property>
+        <widget class="QWidget" name="plot_subwindowA">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutA"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowB">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutB"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowC">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_15">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutC"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="subwindow_plotD">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutD"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QProgressBar" name="progressBar">
+        <property name="font">
+         <font>
+          <family>Cambria</family>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <italic>true</italic>
+          <bold>true</bold>
+          <underline>false</underline>
+          <strikeout>false</strikeout>
+          <kerning>false</kerning>
+         </font>
+        </property>
+        <property name="value">
+         <number>24</number>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>busy</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0" rowspan="4">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>-&gt;'Time Increment' is the time between
+integration starts.
+
+-&gt;'Total Time' is the total length of
+time of the scan.
+
+-&gt;Note, the max number of data
+points acquirable is 5000 points where
+Total Time/Time Increment = num data pts.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>tbsDiagram.jpg</pixmap>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>*If 'Time Increment' is zero then then
+ the effective 'Time Increment' will equal
+the 'Integration Time' value.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -516,7 +582,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1298</width>
+     <width>1329</width>
      <height>26</height>
     </rect>
    </property>
@@ -557,11 +623,23 @@
     <addaction name="actionSide"/>
     <addaction name="actionFront"/>
    </widget>
+   <widget class="QMenu" name="menuSubwindow_Plots">
+    <property name="title">
+     <string>Subwindow Plots</string>
+    </property>
+    <addaction name="actionTiled"/>
+    <addaction name="actionCascade"/>
+    <addaction name="actionadd_view_set_PlotA"/>
+    <addaction name="actionadd_view_set_PlotB"/>
+    <addaction name="actionadd_view_set_PlotC"/>
+    <addaction name="actionadd_view_set_PlotD"/>
+   </widget>
    <addaction name="menuMain"/>
    <addaction name="menuScan"/>
    <addaction name="menuDetector"/>
    <addaction name="menuGain"/>
    <addaction name="menuGrating"/>
+   <addaction name="menuSubwindow_Plots"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTimeMenu">
@@ -667,6 +745,36 @@
    </property>
    <property name="text">
     <string>600 l/mm (IR)</string>
+   </property>
+  </action>
+  <action name="actionTiled">
+   <property name="text">
+    <string>tiled</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>cascade</string>
+   </property>
+  </action>
+  <action name="actionadd_view_set_PlotA">
+   <property name="text">
+    <string>add/view/set PlotA</string>
+   </property>
+  </action>
+  <action name="actionadd_view_set_PlotB">
+   <property name="text">
+    <string>add/view/set PlotB</string>
+   </property>
+  </action>
+  <action name="actionadd_view_set_PlotC">
+   <property name="text">
+    <string>add/view/set PlotC</string>
+   </property>
+  </action>
+  <action name="actionadd_view_set_PlotD">
+   <property name="text">
+    <string>add/view/set PlotD</string>
    </property>
   </action>
  </widget>

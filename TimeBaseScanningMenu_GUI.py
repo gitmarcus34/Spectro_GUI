@@ -8,6 +8,38 @@ import numpy as np
 
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
+			  
+class Error_Message(QMessageBox):
+	def __init__(self, title, text = 'Error', checked = False, parent = None):
+		super(Error_Message, self).__init__(parent)
+		self.setWindowTitle(title)
+		self.setText(text)
+		self.checked = checked
+		
+		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.setMinimumSize(QtCore.QSize(600, 300))
+		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
+
+		self.checkBox = QCheckBox()
+		if self.checked:
+			self.checkBox = QCheckBox()
+			self.setCheckBox(self.checkBox)
+			
+	def setChecked(self, newBox = True):
+		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
+		"""
+		if newBox:
+			self.setCheckBox(self.checkBox)
+			
+		elif newBox == False:
+			#remove the check box but be sure to not destroy an instance of checkbox
+			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
+	
+	def run():
+		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
+		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
+		form.show()						 # Show the form
+		app.exec_()	
 
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
@@ -85,8 +117,26 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
 		###Error messages
-		self.error_inputNotNum = QtWidgets.QErrorMessage()
-		self.error_inputNotInRange = QtWidgets.QErrorMessage()
+		###Error Messages
+		self.warning_suggestedRange1800 = Error_Message('Warning: Range Suggestion')
+		self.warning_suggestedRange1800.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange1800.setIcon(QMessageBox.Warning)
+		self.warning_suggestedRange1800.setChecked(True)
+		
+		self.warning_suggestedRange600 = Error_Message('Warning: Range Suggestion')
+		self.warning_suggestedRange600.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.warning_suggestedRange600.setIcon(QMessageBox.Warning)
+		self.warning_suggestedRange600.setChecked(True)
+		
+		self.error_inputNotNum = Error_Message('Not Number Error')
+		self.error_inputNotNum.setIcon(QMessageBox.Critical)
+		
+		self.error_inputNotInRange = Error_Message('Not In Range Error')
+		self.error_inputNotInRange.setIcon(QMessageBox.Critical)
+		
+		self.error_invalidTimeInput = Error_Message('Invalid Time Input')
+		self.error_invalidTimeInput.setIcon(QMessageBox.Critical)		
+		
 		
 		
 		
@@ -116,10 +166,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		"""
 		
 		print('Applying Settings!')
-		self.intTime = self.IntegrationTimeSlider.value()
+		self.intTime = self.IntegrationTimeSlider.value()/1000
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
-		self.timeInc = self.TimeIncrementSlider.value()
+		self.timeInc = self.TimeIncrementSlider.value()/1000
 		self.totalTime = self.TotalTimeSlider.value()
 		self.wavelength_nm = self.wavelength_input.text()
 		print('Detector:', self.detector, '; Gain:', self.gain, '; self.grating:', self.grating)
@@ -134,9 +184,9 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.error_inputNotNum.done(1) #delete error message
 		if not (self.is_number(self.wavelength_nm)):
 			print('Displaying Error Message')
-			self.error_inputNotNum.showMessage("ERROR: Wavelength input is not a number!") #make/remake error message
-			#self.error_dialog.activateWindow()
+			self.error_inputNotNum.setText("ERROR: Wavelength input is not a number!") #make/remake error message
 			
+			self.error_inputNotNum.exec() 
 			return #do not continue to calculations
 			
 		self.wavelength_nm = float(self.wavelength_nm) #We all float down here
@@ -145,19 +195,34 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.error_inputNotInRange.done(1) #delete error message
 		if self.wavelength_nm < 0:
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("ERROR: Wavelength input must be a positive number!") #make/remake error message
+			self.error_inputNotInRange.setText("ERROR: Wavelength input must be a positive number!") #make/remake error message
+			self.error_inputNotInRange.exec()
 			return #do not continue to calculations and settings application	
 			
 		elif (self.wavelength_nm < 300 or self.wavelength_nm > 870) and self.grating == '1800 l/mm (Vis)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			self.warning_suggestedRange1800.setText("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			if self.warning_suggestedRange1800.checkBox.isChecked() == False:
+				self.warning_suggestedRange1800.exec() #only execute the error message if the error box is unchecked
 			return #do not continue to calculations and settings application
 		
 		elif (self.wavelength_nm < 300 or self.wavelength_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
-			self.error_inputNotInRange.showMessage("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			self.warning_suggestedRange600.setText("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
+			if self.warning_suggestedRange600.checkBox.isChecked() == False:
+				self.warning_suggestedRange600.exec() #make/remake error message #make/remake error message
 			return #do not continue to calculations and settings application
 		
+		elif (self.timeInc < self.intTime) and self.timeInc != 0:
+			print('Displaying Error Message')
+			self.error_invalidTimeInput.setText("Error: 'Time Increment' must be less than 'Integration Time'\nTime Increment is the time between integration starts. (see illustration on left side of time base scanning menu.")
+			self.error_invalidTimeInput.exec()
+			
+		elif (self.timeInc > self.totalTime) or (self.intTime > self.totalTime): #this should never really be possible as long as max integration time and time increment sliders are 500 ms and min total time slider is 1 second
+			print('Displaying Error Message')
+			self.error_invalidTimeInput.setText("Error: 'Time Increment' and 'Integration Time' must be less than 'Total Time'\n.(see illustration on left side of time base scanning menu.")
+			self.error_invalidTimeInput.exec()
+			
 		self.gratingPos_steps = [self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)]
 		print("gratingPos: {}".format(self.gratingPos_steps))
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
@@ -192,40 +257,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(timeInc),str(totalTime)):
 
-	def convert_NMtoSTEPS(self, grating, nm_val, getFactor = False):
-		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
-		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step wavelength drive step size described 
-		in usermanual PDF page 41).  
-		
-		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook PDF (equation (3)).
-		Essentially: (nm/step factor) = (0.00625 nm)*((1200 l/mm)/(new grating l/mm)) which is just the inverse of the steps/nm factor.  
-		
-		Note that if getFactor parameter is True then this function only returns the step/nm factor for the given grating and ignores the wavelength parameter.
-		"""
-		nm_val = float(nm_val)
-		if grating == '1800 l/mm (Vis)':
-			stepFactor = float(0.00625*((1200)/(1800)))
-			
-			if getFactor == True:
-				return stepFactor
-				
-			stepPos = np.round(nm_val/stepFactor)
-			return stepPos
-			
-		elif grating == '600 l/mm (IR)':
-			stepFactor = float(0.00625*((1200)/(600)))
-			
-			if getFactor == True:
-				return stepFactor
-				
-			stepPos = np.round(nm_val/stepFactor)
-			return stepPos
-			
-		else:
-			print("Grating is not '1800 l/mm (Vis) or 600 l/mm (IR)")
-		return
-		
-	
+
 	def menuBar_action(self, action):
 		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
 		"""
@@ -270,7 +302,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			action.setChecked(True)
 			
 		elif action in self.gainOptions:
-			self.gain = self.gainOptions[action]
+			self.gain = self.gainOptions[action]	
 			print('Gain Changed to "{}"!'.format(self.gain))
 			
 		#set the check mark next to the new detector setting
@@ -279,11 +311,15 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 					act.setChecked(False)
 					
 			action.setChecked(True)
-			
+
 		elif action in self.gratingOptions:
 			self.grating = self.gratingOptions[action]
-			print('Grating changed to "{}"!'.format(self.grating))
 			
+			if self.grating == '600 l/mm (IR)':
+				self.wavelength_input.setPlaceholderText("300 - 1000")
+				
+			print('Grating changed to "{}"!'.format(self.grating))
+            
 			#set the check mark next to the new detector setting
 			for act in self.gratingOptions:
 				if act.isChecked():
@@ -291,6 +327,41 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 					
 			action.setChecked(True)
 			
+	def convert_NMtoSTEPS(self, grating, nm_val, getFactor = False):
+		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
+		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step wavelength drive step size described 
+		in usermanual PDF page 41).  
+		
+		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook PDF (equation (3)).
+		Essentially: (nm/step factor) = (0.00625 nm)*((1200 l/mm)/(new grating l/mm)) which is just the inverse of the steps/nm factor.  
+		
+		Note that if getFactor parameter is True then this function only returns the step/nm factor for the given grating and ignores the wavelength parameter.
+		"""
+		nm_val = float(nm_val)
+		if grating == '1800 l/mm (Vis)':
+			stepFactor = float(0.00625*((1200)/(1800)))
+			
+			if getFactor == True:
+				return stepFactor
+				
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		elif grating == '600 l/mm (IR)':
+			stepFactor = float(0.00625*((1200)/(600)))
+			
+			if getFactor == True:
+				return stepFactor
+				
+			stepPos = np.round(nm_val/stepFactor)
+			return stepPos
+			
+		else:
+			print("Grating is not '1800 l/mm (Vis) or 600 l/mm (IR)")
+		return
+		
+		
+	
 	def is_number(self,a):
 		"""Function used to check if input from user is a number.
 		"""
