@@ -121,7 +121,7 @@ class SetScan_Thread(QThread):
 	
 	def run(self):
 		time.sleep(2)
-		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
+		#response = a.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime))
 		#print("Apply Settings Response: ", responseApply)
 		responseApply = True
 		if responseApply:
@@ -182,22 +182,21 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.plot_subwindowB.setWindowTitle('Plot Subwindow B')
 		self.plot_subwindowC.setWindowTitle('Plot Subwindow C')
 		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
-		#Thread Definitions
+		
+		
+		###Thread Definitions
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
 		
 		#progress bar
 		self.progressBar.reset()
 		self.progressBar.setValue(0)
 		
-		self.errorMessage = Error_Message('test message')
-		#self.errorMessage.exec()
-		
 		#bar menu
 		##window paths
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
-		#scan parameters
+		#scan parameters menus
 		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
 		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}

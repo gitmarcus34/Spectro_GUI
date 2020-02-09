@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1329</width>
-    <height>686</height>
+    <width>1304</width>
+    <height>651</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -495,7 +495,7 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="subwindow_plotD">
+        <widget class="QWidget" name="plot_subwindowD">
          <property name="windowTitle">
           <string>Subwindow</string>
          </property>
@@ -582,7 +582,7 @@ the 'Integration Time' value.</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1329</width>
+     <width>1304</width>
      <height>26</height>
     </rect>
    </property>
@@ -623,23 +623,23 @@ the 'Integration Time' value.</string>
     <addaction name="actionSide"/>
     <addaction name="actionFront"/>
    </widget>
-   <widget class="QMenu" name="menuSubwindow_Plots">
+   <widget class="QMenu" name="menu_SubwindowPlots">
     <property name="title">
      <string>Subwindow Plots</string>
     </property>
     <addaction name="actionTiled"/>
     <addaction name="actionCascade"/>
-    <addaction name="actionadd_view_set_PlotA"/>
-    <addaction name="actionadd_view_set_PlotB"/>
-    <addaction name="actionadd_view_set_PlotC"/>
-    <addaction name="actionadd_view_set_PlotD"/>
+    <addaction name="actionPlotA"/>
+    <addaction name="actionPlotB"/>
+    <addaction name="actionPlotC"/>
+    <addaction name="actionPlotD"/>
    </widget>
    <addaction name="menuMain"/>
    <addaction name="menuScan"/>
    <addaction name="menuDetector"/>
    <addaction name="menuGain"/>
    <addaction name="menuGrating"/>
-   <addaction name="menuSubwindow_Plots"/>
+   <addaction name="menu_SubwindowPlots"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTimeMenu">
@@ -757,22 +757,37 @@ the 'Integration Time' value.</string>
     <string>cascade</string>
    </property>
   </action>
-  <action name="actionadd_view_set_PlotA">
+  <action name="actionPlotA">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>add/view/set PlotA</string>
    </property>
   </action>
-  <action name="actionadd_view_set_PlotB">
+  <action name="actionPlotB">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>add/view/set PlotB</string>
    </property>
   </action>
-  <action name="actionadd_view_set_PlotC">
+  <action name="actionPlotC">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>add/view/set PlotC</string>
    </property>
   </action>
-  <action name="actionadd_view_set_PlotD">
+  <action name="actionPlotD">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>add/view/set PlotD</string>
    </property>

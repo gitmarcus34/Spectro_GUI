@@ -6,8 +6,37 @@ from PyQt5.QtWidgets import *
 
 import numpy as np
 
+import time
+
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
+			  
+class SetScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		
+		self.spectrometer = spectrometer
+		self.intTime = intTime
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.timeInc = timeInc
+		self.totalTime = totalTime
+		self.wavelength_steps = wavelength_steps
+		self.detector = detector
+		self.gain = gain
+		self.grating = grating
+		
+	
+	def run(self):
+		time.sleep(2)
+		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
+		#print("Apply Settings Response: ", responseApply)
+		responseApply = True
+		if responseApply:
+			print('Settings Applied - Ready to start scan!') 
+		return
+		
 			  
 class Error_Message(QMessageBox):
 	def __init__(self, title, text = 'Error', checked = False, parent = None):
@@ -50,12 +79,28 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.spectrometer = spectrometer
 		self.subwindow_dict = subwindow_dict
 		
+		
+		###Subwindows
+		#subwindows of Core Window
+		self.mainmenu_sub = self.subwindow_dict['mainmenu']
+		self.scanningmenu_sub = self.subwindow_dict['scanningmenu']
+		
+		#scanning plot subwindows
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowD)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowC)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowB)
+		self.sub_mdiArea.addSubWindow(self.plot_subwindowA)
+		
+		self.plot_subwindowA.setWindowTitle('Plot Subwindow A')
+		self.plot_subwindowB.setWindowTitle('Plot Subwindow B')
+		self.plot_subwindowC.setWindowTitle('Plot Subwindow C')
+		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
+		
 		#bar menu
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
-		
-		#scan parameters
+		#scan parameters menus
 		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
 		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}
@@ -66,10 +111,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.menuGrating.triggered[QAction].connect(self.menuBar_action)
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
 		
-
-		#subwindows
-		self.mainmenu_sub = self.subwindow_dict['mainmenu']
-		self.scanningmenu_sub = self.subwindow_dict['scanningmenu']
+		#subwindow control options menu
+		self.menu_SubwindowPlots.triggered[QAction].connect(self.menuBar_action)
+		self.subPlotOptions = {self.actionTiled: 'tiled', self.actionCascade: 'cascade', self.actionPlotA: self.subLayoutA, self.actionPlotB: self.subLayoutB, self.actionPlotC: self.subLayoutC, self.actionPlotD: self.subLayoutD}
+		
 		
 		####sliders
 		#Slider Signals
@@ -135,9 +180,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.error_inputNotInRange.setIcon(QMessageBox.Critical)
 		
 		self.error_invalidTimeInput = Error_Message('Invalid Time Input')
-		self.error_invalidTimeInput.setIcon(QMessageBox.Critical)		
+		self.error_invalidTimeInput.setIcon(QMessageBox.Critical)
 		
-		
+		self.error_dataOverload = Error_Message('Data Overload')
+		self.error_dataOverload.setIcon(QMessageBox.Critical)
 		
 		
 		
@@ -223,11 +269,36 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			self.error_invalidTimeInput.setText("Error: 'Time Increment' and 'Integration Time' must be less than 'Total Time'\n.(see illustration on left side of time base scanning menu.")
 			self.error_invalidTimeInput.exec()
 			
-		self.gratingPos_steps = [self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)]
-		print("gratingPos: {}".format(self.gratingPos_steps))
-		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		elif (self.timeInc == 0 and self.totalTime/self.intTime >= 5000):
+			print('Displaying Error Message')
+			self.error_dataOverload.setText("The total number of data points acquired during the scan must be less than 5000 points.\n\nTry decreasing the 'Total Time' or increasing the 'Time Increment' to decrease number of data points")  
+			self.error_dataOverload.exec()
+			
+		elif self.timeInc != 0:
+			if (self.totalTime/self.timeInc >= 5000):		
+				print('Displaying Error Message')
+				self.error_dataOverload.setText("The total number of data points acquired during the scan must be less than 5000 points.\n\nTry decreasing the 'Total Time' or increasing the 'Time Increment' to decrease number of data points")  
+				self.error_dataOverload.exec()		
+				
+		self.wavelength_steps = self.convert_NMtoSTEPS(self.grating, self.wavelength_nm)
+		print("wavelength position in steps: {}".format(self.wavelength_steps))
 		
+		print('Applying Settings and Preparing monochromator for scanning')		
+		self.setscan_thread = SetScan_Thread('spectrometer', self.wavelength_steps, self.intTime, self.timeInc, self.totalTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread.start()
+		#time.sleep(5)
+		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
+		#self.setscan_thread.quit()
+		#self.setscan_thread.wait()
+		self.setscan_thread.finished.connect(self.applythreadFinished)
+		
+	def applythreadFinished(self):
+		print('Thread is finished!')
+		#self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
+		#self.progressBar.setValue(100)
+		#self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
+		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread	
 
 		
 	def startscan(self):
@@ -326,6 +397,29 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 					act.setChecked(False)
 					
 			action.setChecked(True)
+			
+		elif action in self.subPlotOptions:
+			if action == self.actionCascade:
+				self.sub_mdiArea.cascadeSubWindows()
+				print('cascade triggered')
+
+			elif action == self.actionTiled:
+				self.sub_mdiArea.tileSubWindows()
+				print('tiled triggered')
+			
+			elif action == self.actionPlotA:
+				print('set view to subwindow plot A')
+			elif action == self.actionPlotB:
+				print('set view to subwindow plot B')
+			elif action == self.actionPlotC:
+				print('set view to subwindow plot C')
+			elif action == self.actionPlotD:
+				print('set view to subwindow plot D')
+				
+			for act in self.subPlotOptions:
+				if act.isChecked() and (action != self.actionTiled and action != self.actionCascade):
+					act.setChecked(False)
+			action.setChecked(True)				
 			
 	def convert_NMtoSTEPS(self, grating, nm_val, getFactor = False):
 		"""Converts a nm_val to the grating motor step position corresponding to the nm_val (which may be a desired nanometer value of wavelength or step size for example) knowing that the 
