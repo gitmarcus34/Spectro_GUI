@@ -443,7 +443,7 @@ class Spectrometer:
 	def setExitMirror(self,position,mono='0'):
 		mono = str.encode(mono)
 		#Check that right input selected
-		if position=='side':
+		if position=='Side':
 			mode = 'side detector'
 			position='e'
 		elif position=='f':
@@ -489,7 +489,7 @@ class Spectrometer:
 	def setGrating(self,grating,mono='0'):
 		mono = str.encode(mono)
 		if grating!='ir' and grating!='vis':
-			print("Invalid grating selection! Must be either \'600 l/mm (IR)\' or \'1800 l/mm (Vis)\'!")
+			print("Invalid grating selection! Must be either \'ir\' or \'vis\'!")
 			return
 		
 		if grating=='ir':
@@ -548,8 +548,8 @@ class Spectrometer:
 	#Parameters: gain=string representation of gain setting (0-4) (1x,10x,100x,1000x,auto)  mono=monochromator input number
 	#Return: NA. Print when gain set. Return nothing if invalid value entered
 	def setGain(self,gain,mono='0'):
-		if gain!= 'AUTO' and gain!='1X' and gain!='10X' and gain!='100X' and gain!='1000X':
-			print("Invalid gain selection!")
+		if gain!= '0' and gain!='1' and gain!='2' and gain!='3' and gain!='4':
+			print("Invalide gain selection! (0=1x, 1=10x, 2=100x, 3=1000x, 4=AUTO")
 			return
 		
 		gain=str.encode(gain)

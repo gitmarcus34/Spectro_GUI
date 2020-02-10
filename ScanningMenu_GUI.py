@@ -122,11 +122,40 @@ class SetScan_Thread(QThread):
 		
 	
 	def run(self):
-		time.sleep(2)
-		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(self.gain),self.grating,self.detector)
+		#Prepare Gain setting:
+		if self.gain=='AUTO':
+			gain=4
+
+		if self.gain=='1x':
+			gain=0
+
+		if self.gain=='10x':
+			gain=1
+	 
+		if self.gain=='100x':
+			gain=2
+
+		if self.gain=='1000x':
+			gain=3
+
+		#Prepare mirror setting:
+		if self.detector=='Side':
+			detector = 's'
+
+		if self.detector=='Front':
+			detector = 'f'
+
+		#Prepare grating setting:
+		if self.grating=='1800 l/mm (Vis)':
+			grating = 'vis'
+
+		if self.grating=='600 l/mm (IR)':
+			grating = 'ir'
+
+
+		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector)
 		#print("Apply Settings Response: ", responseApply)
-		responseApply = True
-		if responseApply:
+		if response == 0:
 			print('settings applied') 
 		return
 		
@@ -145,9 +174,7 @@ class StartScan_Thread(QThread):
 	
 	def run(self):
 		print('Scan started!')
-		time.sleep(2)
-		#response = self.spectrometer.startScan()
-		response = True
+		response = self.spectrometer.startScan()
 		if response == 0: #check if scan has ended
 			print('gathering data')
 			#steps, intensities = self.spectrometer.getScanData()
@@ -200,9 +227,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
 		#scan parameters menus
-		self.detector, self.gain, self.grating = ('side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
+		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
-		self.detectorOptions = {self.actionSide: 'side', self.actionFront: 'front'}
+		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'front'}
 		
 		self.menuGain.triggered[QAction].connect(self.menuBar_action)
 		self.gainOptions = {self.actionAuto: 'AUTO', self.action1X: '1X', self.action10X: '10X', self.action100X: '100X', self.action1000X: '1000X'}
@@ -411,7 +438,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		#Get the data
 		self.steps,self.intensities = self.spectrometer.getScanData()
-
+		print('should print steps and intensities:', self.steps, self.intensities)
 		#Convert steps to nm
 		for i in range(len(self.steps)):
 			if math.isnan(float(self.steps[i])):
@@ -419,14 +446,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 			grating = self.self.grating
 			lowerWavelen_nm = float(self.lowerWavelen_nm)
-			if grating == '1800 l/mm (Vis)':
+			if self.grating == '1800 l/mm (Vis)':
 				startingValue = np.round(self.lowerWavelen_nm/0.0041666667)*0.0041666667
-			elif grating == '600 l/mm (IR)':
+			elif self.grating == '600 l/mm (IR)':
 				startingValue = np.round(lowerWavelen_nm/0.0125)*0.0125
 
-			if grating == '1800 l/mm (Vis)':
+			if self.grating == '1800 l/mm (Vis)':
 				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
-			elif grating == '600 l/mm (IR)':
+			elif self.grating == '600 l/mm (IR)':
 				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
 
 		#Check for nans (If nan, make it a 0)
