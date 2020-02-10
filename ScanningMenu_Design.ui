@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1133</width>
-    <height>929</height>
+    <width>1073</width>
+    <height>730</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -21,12 +21,49 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_5">
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Wavelength Range:</string>
-      </property>
-     </widget>
+    <item row="3" column="2">
+     <layout class="QHBoxLayout" name="horizontalLayout_6">
+      <item>
+       <widget class="QPushButton" name="ExportPNG_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export Plot: PNG</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ExportJPG_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export Plot: JPG</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ExportCSV_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Export Data: CSV</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="PlotOptions_Button">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Plot Options</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item row="2" column="2">
      <layout class="QGridLayout" name="gridLayout_7">
@@ -34,68 +71,70 @@
        <widget class="QMdiArea" name="sub_mdiArea">
         <property name="maximumSize">
          <size>
-          <width>700</width>
+          <width>1100</width>
           <height>900</height>
          </size>
         </property>
+        <widget class="QWidget" name="plot_subwindowA">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutA"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowB">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutB"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowC">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_12">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutC"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="plot_subwindowD">
+         <property name="windowTitle">
+          <string>Subwindow</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_14">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="subLayoutD"/>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
-     </layout>
-    </item>
-    <item row="4" column="2">
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>Region for updates and error messages (coming soon)</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <widget class="QPushButton" name="ApplySettings_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
+      <item row="1" column="0">
+       <widget class="QProgressBar" name="progressBar">
+        <property name="font">
+         <font>
+          <family>Cambria</family>
+          <weight>75</weight>
+          <italic>true</italic>
+          <bold>true</bold>
+         </font>
         </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
+        <property name="value">
+         <number>24</number>
         </property>
-        <property name="text">
-         <string>Apply Settings</string>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="StartScan_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Start Scan</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="EndScan_Button">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>End Scan</string>
+        <property name="format">
+         <string>Busy</string>
         </property>
        </widget>
       </item>
@@ -205,11 +244,20 @@
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
          <widget class="QLCDNumber" name="lcdNum_ExitSlider">
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>80</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="digitCount">
+           <number>10</number>
           </property>
          </widget>
         </item>
@@ -239,11 +287,20 @@
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
          <widget class="QLCDNumber" name="lcdNum_EntranceSlider">
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
-            <width>80</width>
+            <width>280</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="digitCount">
+           <number>10</number>
           </property>
          </widget>
         </item>
@@ -260,11 +317,20 @@
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
          <widget class="QLCDNumber" name="lcdNum_IntTimeSlider">
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>80</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="digitCount">
+           <number>10</number>
           </property>
          </widget>
         </item>
@@ -281,11 +347,32 @@
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
          <widget class="QLCDNumber" name="lcdNum_StepSizeSlider">
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>80</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="smallDecimalPoint">
+           <bool>false</bool>
+          </property>
+          <property name="digitCount">
+           <number>10</number>
+          </property>
+          <property name="segmentStyle">
+           <enum>QLCDNumber::Filled</enum>
+          </property>
+          <property name="value" stdset="0">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="intValue" stdset="0">
+           <number>0</number>
           </property>
          </widget>
         </item>
@@ -297,50 +384,6 @@
          </widget>
         </item>
        </layout>
-      </item>
-     </layout>
-    </item>
-    <item row="3" column="2">
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <item>
-       <widget class="QPushButton" name="ExportPNG_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export PNG</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="ExportJPG_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export JPG</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="ExportCSV_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Export CSV</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="PlotOptions_Button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>Plot Options</string>
-        </property>
-       </widget>
       </item>
      </layout>
     </item>
@@ -365,6 +408,9 @@
         <property name="text">
          <string/>
         </property>
+        <property name="placeholderText">
+         <string>300</string>
+        </property>
        </widget>
       </item>
       <item row="1" column="2">
@@ -379,6 +425,9 @@
         <property name="text">
          <string/>
         </property>
+        <property name="placeholderText">
+         <string>870</string>
+        </property>
        </widget>
       </item>
       <item row="1" column="5">
@@ -390,6 +439,65 @@
       </item>
      </layout>
     </item>
+    <item row="3" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <item>
+       <widget class="QPushButton" name="ApplySettings_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Apply Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="StartScan_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>Start Scan</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="EndScan_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>End Scan</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Wavelength Range:</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="2">
      <widget class="QLabel" name="MenuLabel">
       <property name="maximumSize">
@@ -400,6 +508,7 @@
       </property>
       <property name="font">
        <font>
+        <family>Lucida Bright</family>
         <pointsize>12</pointsize>
         <weight>75</weight>
         <bold>true</bold>
@@ -418,7 +527,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1133</width>
+     <width>1073</width>
      <height>26</height>
     </rect>
    </property>
@@ -459,19 +568,43 @@
     <addaction name="action1800Grating"/>
     <addaction name="action600Grating"/>
    </widget>
+   <widget class="QMenu" name="menu_SubwindowPlots">
+    <property name="title">
+     <string>Subwindow Plots</string>
+    </property>
+    <addaction name="actionTiled"/>
+    <addaction name="actionCascade"/>
+    <addaction name="actionPlotA"/>
+    <addaction name="actionPlotB"/>
+    <addaction name="actionPlotC"/>
+    <addaction name="actionPlotD"/>
+   </widget>
    <addaction name="menuMain"/>
    <addaction name="menuScan"/>
    <addaction name="menuDetector"/>
    <addaction name="menuGain"/>
    <addaction name="menuGrating"/>
+   <addaction name="menu_SubwindowPlots"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTimeMenu">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Time Base Scanning</string>
    </property>
   </action>
   <action name="actionWavelengthMenu">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Wavelength Scanning</string>
    </property>
@@ -482,48 +615,129 @@
    </property>
   </action>
   <action name="actionSide">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Side</string>
    </property>
   </action>
   <action name="actionFront">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Front</string>
    </property>
   </action>
   <action name="actionAuto">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>AUTO</string>
    </property>
   </action>
   <action name="action1X">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>1X</string>
    </property>
   </action>
   <action name="action10X">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>10X</string>
    </property>
   </action>
   <action name="action100X">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>100X</string>
    </property>
   </action>
   <action name="action1000X">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>1000X</string>
    </property>
   </action>
   <action name="action1800Grating">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>1800 l/mm (Vis)</string>
    </property>
   </action>
   <action name="action600Grating">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>600 l/mm (IR)</string>
+   </property>
+  </action>
+  <action name="actionTiled">
+   <property name="text">
+    <string>tiled</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>cascade</string>
+   </property>
+  </action>
+  <action name="actionPlotA">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view/set plotA</string>
+   </property>
+  </action>
+  <action name="actionPlotB">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view/set plotB</string>
+   </property>
+  </action>
+  <action name="actionPlotC">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view/set plotC</string>
+   </property>
+  </action>
+  <action name="actionPlotD">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>add/view/set plotB</string>
    </property>
   </action>
  </widget>

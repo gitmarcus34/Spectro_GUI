@@ -936,7 +936,7 @@ class Spectrometer:
 	#Function to collect data after scan complete
 	#Parameters: cycle=the cycle number that you wish to collect data from, in the form of a string
 	#Returns: steps=the numpy array of steps  intensities=the numpy array of measured intensities
-	def getDataScan(self,cycle='1', timeBaseScan = False):
+	def getScanData(self,cycle='1', timeBaseScan = False):
 
 		if timeBaseScan == False:
 			cycle = str.encode(cycle)

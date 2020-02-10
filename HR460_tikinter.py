@@ -676,7 +676,7 @@ class Scanning(tk.Frame):
 		totalTime = 0
 		while endFlag:
 			try:
-				steps, intensity = a.getDataScan()
+				steps, intensity = a.getScanData()
 				print('intensity:', intensity)
 				print('total time:', totalTime)
 				endFlag = False
@@ -1273,17 +1273,17 @@ class Scanning(tk.Frame):
 
 		if grating=='1800 l/mm (Vis)':
 			#Compute the number of data points with the given step size (0.0041666667nm is the step size given by the manual)
-			lowStep = int(float(low)/0.0041666667)
-			highStep = int(float(high)/0.0041666667)
+			lowStep = np.round(float(low)/0.0041666667)
+			highStep = np.round(float(high)/0.0041666667)
 			rangeDif = highStep-lowStep
-			stepLength = int(stepSize/0.0041666667)
-			dataPoints = int(rangeDif/stepLength)
+			stepLength = np.round(stepSize/0.0041666667)
+			dataPoints = np.round(rangeDif/stepLength)
 		elif grating=='600 l/mm (IR)':
-			lowStep = int(float(low)/0.0125)
-			highStep = int(float(high)/0.0125)
+			lowStep = np.round(float(low)/0.0125)
+			highStep = np.round(float(high)/0.0125)
 			rangeDif = highStep-lowStep
-			stepLength = int(stepSize/0.0125)
-			dataPoints = int(rangeDif/stepLength)
+			stepLength = np.round(stepSize/0.0125)
+			dataPoints = np.round(rangeDif/stepLength)
 		
 		#If exceeding 5000 data points:
 		if dataPoints>5000:
@@ -1419,7 +1419,7 @@ class Scanning(tk.Frame):
 		self.endButton.config(state=DISABLED)  
 
 		#Get the data
-		self.steps,self.intensities = a.getDataScan()
+		self.steps,self.intensities = a.getScanData()
 
 		#Convert steps to nm
 		for i in range(len(self.steps)):
@@ -2002,7 +2002,8 @@ class timeBaseScanning(tk.Frame):
 		response = a.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime))
 		print("Apply Settings Response: ", response)
 		if response == 0:
-		   self.startButton.configure(state=NORMAL)
+			return
+		self.startButton.configure(state=NORMAL)
 		   
 
 	def startScanButton(self):
@@ -2016,7 +2017,7 @@ class timeBaseScanning(tk.Frame):
 
 		if response_start == 0:
 			#Get and print the data
-			self.steps,self.intensities = a.getDataScan(1, True)
+			self.steps,self.intensities = a.getScanData(1, True)
 
 			self.unlockFeatures()
 			print(self.intensities)
@@ -2058,8 +2059,8 @@ class timeBaseScanning(tk.Frame):
 #				if status == 0:
 #				   endFlag = False
 #				elif status == 3:
-#				   #self.lastIntensity = a.getDataScan()[1][-1]
-#				   self.intensities = a.getDataScan()[1][0:]
+#				   #self.lastIntensity = a.getScanData()[1][-1]
+#				   self.intensities = a.getScanData()[1][0:]
 #				#print(self.lastIntensity)
 #				print(self.intensities)
 #			except serial.serialutil.SerialException:
@@ -2125,18 +2126,18 @@ class timeBaseScanning(tk.Frame):
 		self.startButton.config(state=NORMAL)
 
 def mainloop_thread():
-    app = HR460App()
-    app.mainloop()
+	app = HR460App()
+	app.mainloop()
 
 
 def main():
-    #thread_mainloop = threading.Thread(target = mainloop_thread)
-    #thread_mainloop.start()
-    print('running2')
-    app = HR460App()
-    app.mainloop()
+	#thread_mainloop = threading.Thread(target = mainloop_thread)
+	#thread_mainloop.start()
+	print('running2')
+	app = HR460App()
+	app.mainloop()
 
-    
+	
 if __name__ == '__main__':
-    print('running')
-    main()
+	print('running')
+	main()
