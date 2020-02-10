@@ -319,6 +319,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.progressBar.setValue(60)
 		
 		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+
 		self.setscan_thread.start()
 		#time.sleep(5)
 		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):

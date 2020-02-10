@@ -60,7 +60,7 @@ class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 		self.subwindow_dict['scanningmenu'] = self.scanningmenu_sub
 		
 		#scanning menu subwindow
-		self.tbsmenu = TBS_GUI.TBS_Menu(mdiArea = self.mdiArea, subwindow_dict = self.subwindow_dict)
+		self.tbsmenu = TBS_GUI.TBS_Menu(mdiArea = self.mdiArea,spectrometer = self.spectrometer, subwindow_dict = self.subwindow_dict)
 		#self.scanningmenu_sub = QMdiSubWindow()
 		self.tbsmenu_sub.setWidget(self.tbsmenu)
 		self.subwindow_dict['tbsmenu'] = self.tbsmenu_sub

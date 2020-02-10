@@ -54,24 +54,7 @@ class AnimatedPlot(FigureCanvas):
 		print('start to animate')
 		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
 		
-		
-
-			  
-
-class SetScan_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
-		super(SetScan_Thread, self).__init__(parent)
-		
 	
-	def run(self):
-		time.sleep(2)
-		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
-		#print("Apply Settings Response: ", responseApply)
-		responseApply = True
-		if responseApply:
-			print('Settings Applied - Ready to start scan!') 
-		return
 
 class SetScan_Thread(QThread):
 	actionSignal = pyqtSignal()
@@ -91,47 +74,43 @@ class SetScan_Thread(QThread):
 		
 	
 	def run(self):
-		time.sleep(2)
-		#responseApply = self.spectrometer.setScanGUI(str(lowerWave_steps),str(upperWave_steps),str(stepIncrement_steps),str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector)
-		#print("Apply Settings Response: ", responseApply)
-		responseApply = True
-		if responseApply:
+		#Prepare Gain setting:
+		if self.gain=='AUTO':
+			gain=4
+
+		if self.gain=='1x':
+			gain=0
+
+		if self.gain=='10x':
+			gain=1
+	 
+		if self.gain=='100x':
+			gain=2
+
+		if self.gain=='1000x':
+			gain=3
+
+		#Prepare mirror setting:
+		if self.detector=='Side':
+			detector = 's'
+
+		if self.detector=='Front':
+			detector = 'f'
+
+		#Prepare grating setting:
+		if self.grating=='1800 l/mm (Vis)':
+			grating = 'vis'
+
+		if self.grating=='600 l/mm (IR)':
+			grating = 'ir'
+
+		response = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector,'3',str(self.wavelength_steps),str(self.timeInc),str(self.totalTime))
+		print("Apply Settings Response: ", response)
+		
+		if response:
 			print('Settings Applied - Ready to start scan!') 
-		return
+			return
 		
-			  
-class Error_Message(QMessageBox):
-	def __init__(self, title, text = 'Error', checked = False, parent = None):
-		super(Error_Message, self).__init__(parent)
-		self.setWindowTitle(title)
-		self.setText(text)
-		self.checked = checked
-		
-		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
-		self.setMinimumSize(QtCore.QSize(600, 300))
-		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
-
-		self.checkBox = QCheckBox()
-		if self.checked:
-			self.checkBox = QCheckBox()
-			self.setCheckBox(self.checkBox)
-			
-	def setChecked(self, newBox = True):
-		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
-		"""
-		if newBox:
-			self.setCheckBox(self.checkBox)
-			
-		elif newBox == False:
-			#remove the check box but be sure to not destroy an instance of checkbox
-			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
-	
-	def run():
-		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
-		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
-		form.show()						 # Show the form
-		app.exec_()	
-
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
@@ -275,10 +254,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		"""
 		
 		print('Applying Settings!')
-		self.intTime = self.IntegrationTimeSlider.value()/1000
+		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
-		self.timeInc = self.TimeIncrementSlider.value()/1000
+		self.timeInc = self.TimeIncrementSlider.value()
 		self.totalTime = self.TotalTimeSlider.value()
 		self.wavelength_nm = self.wavelength_input.text()
 		print('Detector:', self.detector, '; Gain:', self.gain, '; self.grating:', self.grating)
@@ -327,18 +306,18 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			self.error_invalidTimeInput.setText("Error: 'Time Increment' must be less than 'Integration Time'\nTime Increment is the time between integration starts. (see illustration on left side of time base scanning menu.")
 			self.error_invalidTimeInput.exec()
 			
-		elif (self.timeInc > self.totalTime) or (self.intTime > self.totalTime): #this should never really be possible as long as max integration time and time increment sliders are 500 ms and min total time slider is 1 second
+		elif ((self.timeInc/1000) > self.totalTime) or ((self.intTime/1000) > self.totalTime): #this should never really be possible as long as max integration time and time increment sliders are 500 ms and min total time slider is 1 second
 			print('Displaying Error Message')
 			self.error_invalidTimeInput.setText("Error: 'Time Increment' and 'Integration Time' must be less than 'Total Time'\n.(see illustration on left side of time base scanning menu.")
 			self.error_invalidTimeInput.exec()
 			
-		elif (self.timeInc == 0 and self.totalTime/self.intTime >= 5000):
+		elif (self.timeInc == 0 and self.totalTime/(self.intTime/1000) >= 5000):
 			print('Displaying Error Message')
 			self.error_dataOverload.setText("The total number of data points acquired during the scan must be less than 5000 points.\n\nTry decreasing the 'Total Time' or increasing the 'Time Increment' to decrease number of data points")  
 			self.error_dataOverload.exec()
 			
 		elif self.timeInc != 0:
-			if (self.totalTime/self.timeInc >= 5000):		
+			if (self.totalTime/(self.timeInc/1000) >= 5000):		
 				print('Displaying Error Message')
 				self.error_dataOverload.setText("The total number of data points acquired during the scan must be less than 5000 points.\n\nTry decreasing the 'Total Time' or increasing the 'Time Increment' to decrease number of data points")  
 				self.error_dataOverload.exec()		
@@ -347,14 +326,14 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		print("wavelength position in steps: {}".format(self.wavelength_steps))
 		
 		print('Applying Settings and Preparing monochromator for scanning')		
-		self.setscan_thread = SetScan_Thread('spectrometer', self.wavelength_steps, self.intTime, self.timeInc, self.totalTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread = SetScan_Thread(self.spectrometer, self.wavelength_steps, self.intTime, self.timeInc, self.totalTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
 		self.setscan_thread.start()
 		#time.sleep(5)
 		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
 		
 		#self.setscan_thread.quit()
 		#self.setscan_thread.wait()
-		self.setscan_thread.finished.connect(self.applythreadFinished)
+		#self.setscan_thread.finished.connect(self.applythreadFinished)
 		
 	def applythreadFinished(self):
 		print('Thread is finished!')
@@ -535,6 +514,39 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			pass
 
 		return False
+
+class Error_Message(QMessageBox):
+	def __init__(self, title, text = 'Error', checked = False, parent = None):
+		super(Error_Message, self).__init__(parent)
+		self.setWindowTitle(title)
+		self.setText(text)
+		self.checked = checked
+		
+		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.setMinimumSize(QtCore.QSize(600, 300))
+		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
+
+		self.checkBox = QCheckBox()
+		if self.checked:
+			self.checkBox = QCheckBox()
+			self.setCheckBox(self.checkBox)
+			
+	def setChecked(self, newBox = True):
+		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
+		"""
+		if newBox:
+			self.setCheckBox(self.checkBox)
+			
+		elif newBox == False:
+			#remove the check box but be sure to not destroy an instance of checkbox
+			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
+	
+	def run():
+		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
+		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
+		form.show()						 # Show the form
+		app.exec_()	
+
 						
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
