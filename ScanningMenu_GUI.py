@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
+import math
 import random
 
 import numpy as np
@@ -15,95 +15,7 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 			  # it also keeps events etc that we defined in Qt Designer
 import time
 
-class Canvas(FigureCanvas):
-	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
-		self.figure = Figure(figsize=(width, height), dpi=dpi)
-		self.axes = self.figure.add_subplot(111)
 
-		FigureCanvas.__init__(self, self.figure)
-		self.setParent(parent)
-		self.entSize = entSize
-		self.exitSize = exitSize
-		self.stepIncrement = stepIncrement
-		self.intTime = intTime
-		self.steps, self.intensities = scanData
- 
-		self.plot()
-		
-	
-	def getFigure(self):
-		"""return the figure so that we could export it as png/jpg
-		"""
-		return self.figure	
- 
-	def plot(self):
-		#randNum = random.random()
-		#y = np.array([random.random(), random.random(),random.random()])
-		#x = [1, 2, 3]
-		print(self.intensities)
-		ax = self.figure.add_subplot(111)
-		#ax.plot(self.steps, self.intensities)
-		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
-
-		ax.set_xlabel('Wavelength')
-		ax.set_ylabel('Intensity')
- 
-
-class Error_Message(QMessageBox):
-	def __init__(self, title, text = 'Error', checked = False, parent = None):
-		super(Error_Message, self).__init__(parent)
-		self.setWindowTitle(title)
-		self.setText(text)
-		self.checked = checked
-		
-		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
-		self.setMinimumSize(QtCore.QSize(600, 300))
-		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
-
-		self.checkBox = QCheckBox()
-		if self.checked:
-			self.checkBox = QCheckBox()
-			self.setCheckBox(self.checkBox)
-			
-	def setChecked(self, newBox = True):
-		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
-		"""
-		if newBox:
-			self.setCheckBox(self.checkBox)
-			
-		elif newBox == False:
-			#remove the check box but be sure to not destroy an instance of checkbox
-			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
-	
-	def run():
-		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
-		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
-		form.show()						 # Show the form
-		app.exec_()	
-
-class BusyDots_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self,progressBar = None, parent = None):
-		super(BusyDots_Thread, self).__init__(parent)
-		self.progressBar = progressBar
-		self.busy = True
-		
-	def triggerFinish(self, busy = False):
-		"""call with busy = False to trigger run to return
-		"""
-		self.busy = busy
-
-	
-	def run(self):
-		while self.busy:		
-			barMessage = self.progressBar.text()
-			if barMessage[-3:] != '...':
-				self.progressBar.setFormat("{}.".format(barMessage))			
-			else:
-				self.progressBar.setFormat(barMessage[:-3])
-			time.sleep(0.5)
-			self.actionSignal.emit()
-		return
 class SetScan_Thread(QThread):
 	actionSignal = pyqtSignal()
 	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
@@ -154,7 +66,8 @@ class SetScan_Thread(QThread):
 
 
 		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector)
-		#print("Apply Settings Response: ", responseApply)
+
+		print("Apply Settings Response: ", response)
 		if response == 0:
 			print('settings applied') 
 		return
@@ -175,6 +88,7 @@ class StartScan_Thread(QThread):
 	def run(self):
 		print('Scan started!')
 		response = self.spectrometer.startScan()
+		print('start scan response: ', response)
 		if response == 0: #check if scan has ended
 			print('gathering data')
 			#steps, intensities = self.spectrometer.getScanData()
@@ -229,7 +143,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#scan parameters menus
 		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
-		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'front'}
+		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}
 		
 		self.menuGain.triggered[QAction].connect(self.menuBar_action)
 		self.gainOptions = {self.actionAuto: 'AUTO', self.action1X: '1X', self.action10X: '10X', self.action100X: '100X', self.action1000X: '1000X'}
@@ -327,7 +241,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
-		self.stepSize_nm = self.StepSizeSlider.value()
+		self.stepSize_nm = self.incremented_val
 		self.lowerWavelen_nm = self.lowerWavelength_input.text()
 		self.upperWavelen_nm = self.upperWavelength_input.text()
 		
@@ -429,22 +343,30 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#self.subLayoutA.addWidget(canvas)
 		#self.plot_subwindowA.show()
 		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
-		self.startScan_thread.start()
+		#self.startScan_thread.start()
+		
+		
+		#self.startScan_thread.finished.connect(self.startThreadFinished)
 
-		self.startScan_thread.finished.connect(self.startThreadFinished)
+
+		response = self.spectrometer.startScan()
+		print('start scan response: ', response)
+		if response == 0: #check if scan has ended
+			print('gathering data')
+			self.startThreadFinished()
 	
 	def startThreadFinished(self):
 		print('scan complete!')
 		
 		#Get the data
-		self.steps,self.intensities = self.spectrometer.getScanData()
+		self.steps,self.intensities = self.spectrometer.getDataScan()
 		print('should print steps and intensities:', self.steps, self.intensities)
 		#Convert steps to nm
 		for i in range(len(self.steps)):
 			if math.isnan(float(self.steps[i])):
 				self.steps[i]=0.0
 
-			grating = self.self.grating
+			grating = self.grating
 			lowerWavelen_nm = float(self.lowerWavelen_nm)
 			if self.grating == '1800 l/mm (Vis)':
 				startingValue = np.round(self.lowerWavelen_nm/0.0041666667)*0.0041666667
@@ -452,9 +374,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				startingValue = np.round(lowerWavelen_nm/0.0125)*0.0125
 
 			if self.grating == '1800 l/mm (Vis)':
-				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(self.incremented_val))
 			elif self.grating == '600 l/mm (IR)':
-				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(self.incremented_val))
 
 		#Check for nans (If nan, make it a 0)
 		for i in range(len(self.intensities)):
@@ -688,7 +610,95 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		return False
 		
 
+class Canvas(FigureCanvas):
+	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
+		self.figure = Figure(figsize=(width, height), dpi=dpi)
+		self.axes = self.figure.add_subplot(111)
+
+		FigureCanvas.__init__(self, self.figure)
+		self.setParent(parent)
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.stepIncrement = stepIncrement
+		self.intTime = intTime
+		self.steps, self.intensities = scanData
+ 
+		self.plot()
+		
+	
+	def getFigure(self):
+		"""return the figure so that we could export it as png/jpg
+		"""
+		return self.figure	
+ 
+	def plot(self):
+		#randNum = random.random()
+		#y = np.array([random.random(), random.random(),random.random()])
+		#x = [1, 2, 3]
+		print('intensities from canvas class: ', self.intensities)
+		ax = self.figure.add_subplot(111)
+		ax.plot(self.steps, self.intensities)
+		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
+
+		ax.set_xlabel('Wavelength')
+		ax.set_ylabel('Intensity')
+ 
+
+class Error_Message(QMessageBox):
+	def __init__(self, title, text = 'Error', checked = False, parent = None):
+		super(Error_Message, self).__init__(parent)
+		self.setWindowTitle(title)
+		self.setText(text)
+		self.checked = checked
+		
+		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.setMinimumSize(QtCore.QSize(600, 300))
+		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
+
+		self.checkBox = QCheckBox()
+		if self.checked:
+			self.checkBox = QCheckBox()
+			self.setCheckBox(self.checkBox)
 			
+	def setChecked(self, newBox = True):
+		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
+		"""
+		if newBox:
+			self.setCheckBox(self.checkBox)
+			
+		elif newBox == False:
+			#remove the check box but be sure to not destroy an instance of checkbox
+			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
+	
+	def run():
+		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
+		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
+		form.show()						 # Show the form
+		app.exec_()	
+
+class BusyDots_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self,progressBar = None, parent = None):
+		super(BusyDots_Thread, self).__init__(parent)
+		self.progressBar = progressBar
+		self.busy = True
+		
+	def triggerFinish(self, busy = False):
+		"""call with busy = False to trigger run to return
+		"""
+		self.busy = busy
+
+	
+	def run(self):
+		while self.busy:		
+			barMessage = self.progressBar.text()
+			if barMessage[-3:] != '...':
+				self.progressBar.setFormat("{}.".format(barMessage))			
+			else:
+				self.progressBar.setFormat(barMessage[:-3])
+			time.sleep(0.5)
+			self.actionSignal.emit()
+		return			
 		
 		
 		

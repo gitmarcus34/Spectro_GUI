@@ -5,7 +5,7 @@
 
 import struct
 import serial
-#from serial import Serial
+from serial import Serial
 import sys
 import math
 import numpy as np 
@@ -20,7 +20,6 @@ class Spectrometer:
 	def __init__(self,usb):
 		self.usb = usb
 		self.usbdir = '/dev/' + self.usb
-		#self.usbdir = '/dev/ttyUSB0'
 		self.s = serial.Serial(self.usbdir,19200,timeout=0.3)
 		print(self.s)
 
@@ -443,7 +442,7 @@ class Spectrometer:
 	def setExitMirror(self,position,mono='0'):
 		mono = str.encode(mono)
 		#Check that right input selected
-		if position=='Side':
+		if position=='s':
 			mode = 'side detector'
 			position='e'
 		elif position=='f':
@@ -937,7 +936,7 @@ class Spectrometer:
 	#Function to collect data after scan complete
 	#Parameters: cycle=the cycle number that you wish to collect data from, in the form of a string
 	#Returns: steps=the numpy array of steps  intensities=the numpy array of measured intensities
-	def getScanData(self,cycle='1', timeBaseScan = False):
+	def getDataScan(self,cycle='1', timeBaseScan = False):
 
 		if timeBaseScan == False:
 			cycle = str.encode(cycle)
@@ -968,7 +967,7 @@ class Spectrometer:
 
 		length = int(output[0])
 
-		print(length)
+		print('length of intensities list: ', length)
 
 		#file1 = open("Spectrum.txt","w")
 
