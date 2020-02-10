@@ -59,6 +59,24 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		####**Untag - initialize the spectrometer when intialize button is pressed.
 		#spectrometer.initialize()
 		print('spectrometer is initializing')
+		self.spectrometer.on()
+
+		self.spectrometer.setMotorSpeed()
+		#self.progress['value']=60
+		#self.progress.update()
+		self.spectrometer.setSlitSpeed('0')
+		#self.progress['value']=70
+		#self.progress.update()
+		self.spectrometer.setSlitSpeed('1')
+		#self.progress['value']=80
+		#self.progress.update()
+		self.spectrometer.setSlitSpeed('2')
+		#self.progress['value']=90
+		#self.progress.update()
+		self.spectrometer.setSlitSpeed('3')
+		self.spectrometer.initialize()
+		print('spectrometer is initialized')
+		
 		
 
 		

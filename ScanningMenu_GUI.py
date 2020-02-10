@@ -16,7 +16,7 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 import time
 
 class Canvas(FigureCanvas):
-	def __init__(self, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
+	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
 		self.figure = Figure(figsize=(width, height), dpi=dpi)
 		self.axes = self.figure.add_subplot(111)
 
@@ -26,6 +26,7 @@ class Canvas(FigureCanvas):
 		self.exitSize = exitSize
 		self.stepIncrement = stepIncrement
 		self.intTime = intTime
+		self.steps, self.intensities = scanData
  
 		self.plot()
 		
@@ -36,12 +37,12 @@ class Canvas(FigureCanvas):
 		return self.figure	
  
 	def plot(self):
-		randNum = random.random()
-		print(randNum)
-		x = np.array([random.random(), random.random(),random.random()])
-		y = [1, 2, 3]
+		#randNum = random.random()
+		#y = np.array([random.random(), random.random(),random.random()])
+		#x = [1, 2, 3]
+		print(self.intensities)
 		ax = self.figure.add_subplot(111)
-		ax.plot(x, y)
+		#ax.plot(self.steps, self.intensities)
 		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
 
 		ax.set_xlabel('Wavelength')
@@ -122,7 +123,7 @@ class SetScan_Thread(QThread):
 	
 	def run(self):
 		time.sleep(2)
-		#response = a.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime))
+		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(self.gain),self.grating,self.detector)
 		#print("Apply Settings Response: ", responseApply)
 		responseApply = True
 		if responseApply:
@@ -194,13 +195,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		#bar menu
 		##window paths
+		self.menubar.setNativeMenuBar(False)
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
 		#scan parameters menus
-		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
+		self.detector, self.gain, self.grating = ('side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
-		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}
+		self.detectorOptions = {self.actionSide: 'side', self.actionFront: 'front'}
 		
 		self.menuGain.triggered[QAction].connect(self.menuBar_action)
 		self.gainOptions = {self.actionAuto: 'AUTO', self.action1X: '1X', self.action10X: '10X', self.action100X: '100X', self.action1000X: '1000X'}
@@ -375,7 +377,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
 		self.progressBar.setValue(60)
 		
-		self.setscan_thread = SetScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
 		self.setscan_thread.start()
 		#time.sleep(5)
 		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
@@ -399,7 +401,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#canvas = Canvas(self, width=8, height=4)
 		#self.subLayoutA.addWidget(canvas)
 		#self.plot_subwindowA.show()
-		self.startScan_thread = StartScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
+		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
 		self.startScan_thread.start()
 
 		self.startScan_thread.finished.connect(self.startThreadFinished)
@@ -407,10 +409,40 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def startThreadFinished(self):
 		print('scan complete!')
 		
+		#Get the data
+		self.steps,self.intensities = self.spectrometer.getScanData()
+
+		#Convert steps to nm
+		for i in range(len(self.steps)):
+			if math.isnan(float(self.steps[i])):
+				self.steps[i]=0.0
+
+			grating = self.self.grating
+			lowerWavelen_nm = float(self.lowerWavelen_nm)
+			if grating == '1800 l/mm (Vis)':
+				startingValue = np.round(self.lowerWavelen_nm/0.0041666667)*0.0041666667
+			elif grating == '600 l/mm (IR)':
+				startingValue = np.round(lowerWavelen_nm/0.0125)*0.0125
+
+			if grating == '1800 l/mm (Vis)':
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
+			elif grating == '600 l/mm (IR)':
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(stepSize))
+
+		#Check for nans (If nan, make it a 0)
+		for i in range(len(self.intensities)):
+			if math.isnan(float(self.intensities[i])):
+				self.intensities[i] = 0.0
+
+		#Convert steps and intensities to float values for accuracy
+		self.steps = self.steps.astype('float64')
+		self.intensities = self.intensities.astype('float64')
+		scanData = (self.steps, self.intensities)
+
 		#create a canvas for the designated plot (designate by choosing the corresponding option in 'subwindow_plots drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.z, width=8, height=4, parent = self)
+				canvas = Canvas(scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures:
 					oldCanvas = self.actions_figures[action][-1]
@@ -425,6 +457,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 					self.actions_figures[action].append(canvas)
 				else:
 					self.actions_figures[action] = [canvas]
+		
+
+
 				
 	def exportPNG(self):
 		fileName = self.saveFileDialog('.PNG')

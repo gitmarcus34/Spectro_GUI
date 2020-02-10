@@ -15,15 +15,19 @@ import ScanningMenu_GUI
 import TimeBaseScanningMenu_GUI as TBS_GUI
 import StartUpMenu_GUI
 import multiDoc_Design
-
+usb = input("Enter the USB port name for the Spectrometer: ")
 class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 	count = 0
 	def __init__(self, parent = None):
 		#super(self.__class__, self).__init__()
 		super(CoreWindow, self).__init__(parent)
 		self.setupUi(self)	# This is defined in multiDoc_Design.py file automatically # It sets up layout and widgets that are defined
+		self.spectrometer = Spectrometer.Spectrometer(usb)	
+
+		#menu bar
 		self.menufiles.triggered[QAction].connect(self.menuBar_action)
-		
+		self.menubar.setNativeMenuBar(False)
+
 		####subwindows: start with startmenu when user chooses 'start' from files drop down menu
 		#dictionary of sub_windows to pass to and reference from subwindows to avoid importing modules to each subwindow (leads to snake eating own tail bug)
 		self.subwindow_dict = {}
@@ -38,7 +42,7 @@ class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 		self.subwindow_dict['tbsmenu'] = self.tbsmenu_sub
 				
 		#start menu subwindow
-		self.startmenu = StartUpMenu_GUI.StartMenu(mdiArea = self.mdiArea, subwindow_dict = self.subwindow_dict)
+		self.startmenu = StartUpMenu_GUI.StartMenu(mdiArea = self.mdiArea,spectrometer = self.spectrometer, subwindow_dict = self.subwindow_dict)
 		#self.startmenu_sub = QMdiSubWindow()
 		self.startmenu_sub.setWidget(self.startmenu)
 		self.subwindow_dict['startmenu'] = self.startmenu_sub
@@ -50,7 +54,7 @@ class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 		self.subwindow_dict['mainmenu'] = self.mainmenu_sub
 		
 		#scanning menu subwindow
-		self.scanningmenu = ScanningMenu_GUI.ScanningMenu(mdiArea = self.mdiArea, subwindow_dict = self.subwindow_dict)
+		self.scanningmenu = ScanningMenu_GUI.ScanningMenu(mdiArea = self.mdiArea, spectrometer = self.spectrometer, subwindow_dict = self.subwindow_dict)
 		#self.scanningmenu_sub = QMdiSubWindow()
 		self.scanningmenu_sub.setWidget(self.scanningmenu)
 		self.subwindow_dict['scanningmenu'] = self.scanningmenu_sub

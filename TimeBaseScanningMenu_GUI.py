@@ -159,6 +159,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
 		
 		#bar menu
+		self.menubar.setNativeMenuBar(False)
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
