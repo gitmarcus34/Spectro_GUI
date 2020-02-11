@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_TBSMenu(object):
     def setupUi(self, TBSMenu):
         TBSMenu.setObjectName("TBSMenu")
-        TBSMenu.resize(1304, 651)
+        TBSMenu.resize(1397, 651)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -166,6 +166,10 @@ class Ui_TBSMenu(object):
         self.StartScan_Button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.StartScan_Button.setObjectName("StartScan_Button")
         self.horizontalLayout_5.addWidget(self.StartScan_Button)
+        self.StartRealData_Button = QtWidgets.QPushButton(self.centralwidget)
+        self.StartRealData_Button.setMinimumSize(QtCore.QSize(0, 50))
+        self.StartRealData_Button.setObjectName("StartRealData_Button")
+        self.horizontalLayout_5.addWidget(self.StartRealData_Button)
         self.EndScan_Button = QtWidgets.QPushButton(self.centralwidget)
         self.EndScan_Button.setMinimumSize(QtCore.QSize(0, 50))
         self.EndScan_Button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
@@ -269,7 +273,7 @@ class Ui_TBSMenu(object):
         self.gridLayout_5.addLayout(self.verticalLayout_4, 0, 0, 4, 1)
         TBSMenu.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(TBSMenu)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1304, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1397, 26))
         self.menubar.setObjectName("menubar")
         self.menuScan = QtWidgets.QMenu(self.menubar)
         self.menuScan.setObjectName("menuScan")
@@ -389,6 +393,8 @@ class Ui_TBSMenu(object):
         self.label.setText(_translate("TBSMenu", "Wavelength:"))
         self.ApplySettings_Button.setText(_translate("TBSMenu", "Apply Settings"))
         self.StartScan_Button.setText(_translate("TBSMenu", "Start Scan"))
+        self.StartRealData_Button.setText(_translate("TBSMenu", "Start Live\n"
+"Data Collection"))
         self.EndScan_Button.setText(_translate("TBSMenu", "End Scan"))
         self.MenuLabel.setText(_translate("TBSMenu", "Time Base Scanning"))
         self.ExportPNG_Button.setText(_translate("TBSMenu", "Export PNG"))

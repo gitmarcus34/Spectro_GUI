@@ -735,9 +735,9 @@ class Spectrometer:
 		"""This Method starts a scan and during the scan it checks the status of the scan.  When the 
 		   scan status becomes idle or not used then 'Scan Complete!' is printed. 
 		"""
+		
+		self.s = serial.Serial(self.usbdir,19200,timeout=0.03)
 		print(self.s) #prints the current port settings.
-		self.s = serial.Serial(self.usbdir,19200,timeout=0.05)
-
 		self.s.write(b'q') #write the start scan command
 		
 		#try and except - Sometimes calling commands during scan caused multiple access on port issue
@@ -849,12 +849,18 @@ class Spectrometer:
 		confirmation = output[0]
 		try:
 			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be adjusted if using cycle scanning if cycle # > 9
+			print('position of last data point:', lastDataPos)
+			return(lastDataPos)
 		except ValueError:
 			print('should be int intensity string', output[1: len(output)-3], type(output[1: len(output)-3]))
+			time.sleep(0.001)
+			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be adjusted if using cycle scanning if cycle # > 9
+		print(lastDataPos)
+		return lastDataPos
 		#cycleNumber = output[len(output)-2:]
 
-		print('position of last data point:', lastDataPos)
-		return(lastDataPos)
+
+		
 
 
 

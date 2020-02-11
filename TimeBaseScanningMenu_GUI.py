@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
+import serial
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -17,99 +18,7 @@ import time
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
 
-	
-class AnimatedPlot(FigureCanvas):
-	def __init__(self):
-		width = 8
-		height = 4
-		dpi = 100
-		parent = None
-		self.figure = Figure(figsize=(width, height), dpi=dpi)
-		self.axes = self.figure.add_subplot(111)
 
-		FigureCanvas.__init__(self, self.figure)
-		self.animate(0)
-		self.animate(0)
-		#self.setParent(parent)
-
-	def animate(self, i):
-		graph_data = open('realTimeData.csv','r').read()
-		lines = graph_data.split('\n')
-		positions = []
-		intensities = []
-		print('animating')
-
-		for line in lines:
-			if len(line) > 1:
-				pos, intensity = line.split(',')
-				positions.append(float(pos))
-				intensities.append(float(intensity))
-
-				#intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
-		self.axes.clear()
-		self.axes.plot(positions, intensities)
-
-
-	def runAnimate(self, animTime = 20):
-		print('start to animate')
-		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
-		
-	
-
-class SetScan_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
-		super(SetScan_Thread, self).__init__(parent)
-		
-		self.spectrometer = spectrometer
-		self.intTime = intTime
-		self.entSize = entSize
-		self.exitSize = exitSize
-		self.timeInc = timeInc
-		self.totalTime = totalTime
-		self.wavelength_steps = wavelength_steps
-		self.detector = detector
-		self.gain = gain
-		self.grating = grating
-		
-	
-	def run(self):
-		#Prepare Gain setting:
-		if self.gain=='AUTO':
-			gain=4
-
-		if self.gain=='1x':
-			gain=0
-
-		if self.gain=='10x':
-			gain=1
-	 
-		if self.gain=='100x':
-			gain=2
-
-		if self.gain=='1000x':
-			gain=3
-
-		#Prepare mirror setting:
-		if self.detector=='Side':
-			detector = 's'
-
-		if self.detector=='Front':
-			detector = 'f'
-
-		#Prepare grating setting:
-		if self.grating=='1800 l/mm (Vis)':
-			grating = 'vis'
-
-		if self.grating=='600 l/mm (IR)':
-			grating = 'ir'
-
-		response = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector,'3',str(self.wavelength_steps),str(self.timeInc),str(self.totalTime))
-		print("Apply Settings Response: ", response)
-		
-		if response:
-			print('Settings Applied - Ready to start scan!') 
-			return
 		
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
@@ -198,6 +107,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#Apply setings button
 		self.ApplySettings_Button.clicked.connect(self.applysettings) 
 		self.StartScan_Button.clicked.connect(self.startscan)
+		self.StartRealData_Button.clicked.connect(self.startlivedata)
 		self.EndScan_Button.clicked.connect(self.endscan)
 		
 		#initialize button
@@ -327,13 +237,9 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		print('Applying Settings and Preparing monochromator for scanning')		
 		self.setscan_thread = SetScan_Thread(self.spectrometer, self.wavelength_steps, self.intTime, self.timeInc, self.totalTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
-		self.setscan_thread.start()
-		#time.sleep(5)
-		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
+		responseApply = self.setscan_thread.start()
+		self.setscan_thread.finished.connect(self.applythreadFinished)
 		
-		#self.setscan_thread.quit()
-		#self.setscan_thread.wait()
-		#self.setscan_thread.finished.connect(self.applythreadFinished)
 		
 	def applythreadFinished(self):
 		print('Thread is finished!')
@@ -344,17 +250,34 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		#canvas = Canvas(self.entSize, self.exitSize, self.intTime, width=8, height=4, parent = self)
 		#self.subLayoutA.addWidget(canvas)
+
+		
+	def startscan(self):
+		"""Slot for StartScan_Button. Start the time base scan and start collecting data in real time which is
+			saved to realTimeData.csv file.
+		"""
+		#define start scan and real time data thread objects
+		self.scanning_thread = StartScan_Thread(self.spectrometer, self.totalTime)
+		
+		
+		#start both scannin_thread and realtime data thread at the same time, realTimeData.csv should update often as data is acquired during scan
+		self.scanning_thread.start(self.totalTime)
+		#self.realtimedata_thread.start()
+
+		"""print('timeIncrement: ', self.timeInc/1000)
 		
 		anim = AnimatedPlot()
 		self.subLayoutA.addWidget(anim)
-		#anim.runAnimate()
 		
-	def startscan(self):
-		"""Slot for StartScan_Button
+		anim.runAnimate()
+		#for i in range(160):
+		#	anim.animate(i)
+		#	time.sleep(self.timeInc/1000)
 		"""
-		
-		print('Starting Scan!')
-		#self.spectrometer.startScan()
+
+	def startlivedata(self):
+		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000)
+		self.realtimedata_thread.start()
 		
 	def endscan(self):
 		"""Slot for endScan_Button
@@ -547,7 +470,159 @@ class Error_Message(QMessageBox):
 		form.show()						 # Show the form
 		app.exec_()	
 
-						
+class SetScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, spectrometer, wavelength_steps, intTime, timeInc, totalTime, entSize, exitSize, gain, grating, detector, parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		
+		self.spectrometer = spectrometer
+		self.intTime = intTime
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.timeInc = timeInc
+		self.totalTime = totalTime*1000
+		self.wavelength_steps = wavelength_steps
+		self.detector = detector
+		self.gain = gain
+		self.grating = grating
+
+		print('int time: {}, time increment: {}, totalTime {}'.format(self.intTime, self.timeInc, self.totalTime))
+		
+	
+	def run(self):
+		#Prepare Gain setting:
+		if self.gain=='AUTO':
+			gain=4
+
+		if self.gain=='1x':
+			gain=0
+
+		if self.gain=='10x':
+			gain=1
+	 
+		if self.gain=='100x':
+			gain=2
+
+		if self.gain=='1000x':
+			gain=3
+
+		#Prepare mirror setting:
+		if self.detector=='Side':
+			detector = 's'
+
+		if self.detector=='Front':
+			detector = 'f'
+
+		#Prepare grating setting:
+		if self.grating=='1800 l/mm (Vis)':
+			grating = 'vis'
+
+		if self.grating=='600 l/mm (IR)':
+			grating = 'ir'
+		
+		response = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector,'3',str(self.wavelength_steps),str(self.timeInc),str(self.totalTime))
+		print("Apply Settings Response: ", response)
+
+		if response == 0:
+			print('apply settings response is good, start scan when ready or change settings again if needed')
+			
+		return
+		
+		
+class StartScan_Thread(QThread):
+	"""Thread that starts a scan as well as get scan data in real time so that the user can access the GUI during a scan in progress.
+	"""
+	def __init__(self, spectrometer, totalTime, parent = None):
+		super(StartScan_Thread, self).__init__(parent)
+		self.spectrometer = spectrometer
+		self.totalTime = totalTime
+	
+		
+	def run(self):
+		scanResponse = self.spectrometer.startScan(self.totalTime)
+		if scanResponse == 0:
+			print('Time Base Scan response indicates scan is complete')
+			return
+		else:
+			print('Time base scan response indicates interruption of scan. Scan Response:', scanResponse)
+			return
+
+class GetRealTimeData_Thread(QThread):
+	"""Thread that gets data in real time to be plotted on a graph in real time.
+	"""
+	def __init__(self, spectrometer, timeIncrement, parent = None):
+		super(GetRealTimeData_Thread, self).__init__(parent)
+		self.spectrometer = spectrometer
+		self.timeIncrement = timeIncrement
+	
+	def getRealTimeData(self):
+	
+		#clear/truncate the file in case there is data already in the realTimeData.csv file that spectrometer.py writes to in getDataFromPos()
+		self.spectrometer.getDataFromPos(0, truncateFile = True, live = True)
+		
+		#call to write the last acquired data repeatedly until the scan is complete
+		endFlag = True
+		while endFlag:
+			
+			#get the postiion of the last data point collected by the spectrometer and to save that data point to the end of the csv file (live = true sends lastDataPos to realtimedata.csv).
+			try:
+				lastDataPos = self.spectrometer.getLastDataPos()
+				intensity = self.spectrometer.getDataFromPos(lastDataPos, live = True)
+				print('intensity:', intensity)
+
+				if self.spectrometer.getScanStatus() == 0:
+					endFlag = False
+					return
+
+			except serial.serialutil.SerialException:
+				print('port busy')
+			
+			#End data collection as soon as scan status is complete or if scanStatus is Not USED or waitng for trigger
+
+				
+			#increment only as fast fast or twice as fast as data is collected so as not to collect many copies of each data point before the next is collected
+			#time.sleep(self.timeIncrement/2) 
+	
+	def run(self):
+		time.sleep(5)
+		self.getRealTimeData()
+	
+	
+class AnimatedPlot(FigureCanvas):
+	def __init__(self):
+		width = 8
+		height = 4
+		dpi = 100
+		parent = None
+		self.figure = Figure(figsize=(width, height), dpi=dpi)
+		self.axes = self.figure.add_subplot(111)
+
+		FigureCanvas.__init__(self, self.figure)
+		#self.setParent(parent)
+
+	def animate(self, i):
+		graph_data = open('realTimeData.csv','r').read()
+		lines = graph_data.split('\n')
+		positions = []
+		intensities = []
+		print('animating')
+
+		for line in lines:
+			if len(line) > 1:
+				pos, intensity = line.split(',')
+				positions.append(float(pos))
+				intensities.append(float(intensity))
+
+				#intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
+		self.axes.clear()
+		self.axes.plot(positions, intensities)
+
+
+	def runAnimate(self, animTime = 20):
+		print('start to animate')
+		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
+		
+					
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
 	form = TBS_Menu()				 # We set the form to be our ExampleApp (StartUpMenu)

@@ -56,8 +56,7 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		"""When Inititalize button is pressed, initialize the spectrometer and update the progress bar. 
 		Opens Main Menu subwindow when done
 		"""
-		####**Untag - initialize the spectrometer when intialize button is pressed.
-		#spectrometer.initialize()
+		####initialize the spectrometer when intialize button is pressed.
 		print('spectrometer is initializing')
 		self.spectrometer.on()
 
