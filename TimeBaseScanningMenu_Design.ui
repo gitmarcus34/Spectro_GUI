@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1304</width>
+    <width>1397</width>
     <height>651</height>
    </rect>
   </property>
@@ -377,6 +377,20 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="StartRealData_Button">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Start Live
+Data Collection</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="EndScan_Button">
         <property name="minimumSize">
          <size>
@@ -582,7 +596,7 @@ the 'Integration Time' value.</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1304</width>
+     <width>1397</width>
      <height>26</height>
     </rect>
    </property>

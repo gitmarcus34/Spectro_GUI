@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_ScanningMenu(object):
     def setupUi(self, ScanningMenu):
         ScanningMenu.setObjectName("ScanningMenu")
-        ScanningMenu.resize(1073, 730)
+        ScanningMenu.resize(1533, 936)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -244,7 +244,7 @@ class Ui_ScanningMenu(object):
         self.gridLayout_5.addWidget(self.MenuLabel, 1, 2, 1, 1)
         ScanningMenu.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(ScanningMenu)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1073, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1533, 26))
         self.menubar.setObjectName("menubar")
         self.menuScan = QtWidgets.QMenu(self.menubar)
         self.menuScan.setObjectName("menuScan")
@@ -401,7 +401,7 @@ class Ui_ScanningMenu(object):
         self.actionPlotA.setText(_translate("ScanningMenu", "add/view/set plotA"))
         self.actionPlotB.setText(_translate("ScanningMenu", "add/view/set plotB"))
         self.actionPlotC.setText(_translate("ScanningMenu", "add/view/set plotC"))
-        self.actionPlotD.setText(_translate("ScanningMenu", "add/view/set plotB"))
+        self.actionPlotD.setText(_translate("ScanningMenu", "add/view/set plotD"))
 
 
 if __name__ == "__main__":

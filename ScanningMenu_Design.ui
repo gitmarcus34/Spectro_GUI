@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1073</width>
-    <height>730</height>
+    <width>1533</width>
+    <height>936</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -527,7 +527,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1073</width>
+     <width>1533</width>
      <height>26</height>
     </rect>
    </property>
@@ -737,7 +737,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>add/view/set plotB</string>
+    <string>add/view/set plotD</string>
    </property>
   </action>
  </widget>
