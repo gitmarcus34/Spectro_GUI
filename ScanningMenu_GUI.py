@@ -16,11 +16,6 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 import time
 
 
-
-		
-		
-
-
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
 		super(self.__class__, self).__init__()
@@ -136,7 +131,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 		
 	def busytext_progressbar(self):
-		"""This function is made incase specific actions should be coded in before each start of each busyMessageThread
+		"""This function is made in case specific actions should be coded in before each start of each busyMessageThread. 
+		Otherwise could just call self.busyMessageThread.start()
 		"""
 		print("basic thread starting")
 		self.busyMessageThread.start()
@@ -659,6 +655,8 @@ class BusyDots_Thread(QThread):
 		return			
 		
 class SetScan_Thread(QThread):
+	"""Set scan thread which handles spectrometer.setScanGUI(params) in a background thread so that GUI can function during this process.
+	"""
 	actionSignal = pyqtSignal()
 	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
 		super(SetScan_Thread, self).__init__(parent)
@@ -715,6 +713,9 @@ class SetScan_Thread(QThread):
 		return	
 		
 class StartScan_Thread(QThread):
+	"""Handles spectrometer.startScan() so that GUI does not lock while while program waits for a response from the
+		spectrometer indicating success/failure or completion of scan. 
+	"""
 	actionSignal = pyqtSignal()
 	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
 		super(StartScan_Thread, self).__init__(parent)

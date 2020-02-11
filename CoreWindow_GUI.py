@@ -22,7 +22,8 @@ class CoreWindow(QtWidgets.QMainWindow, multiDoc_Design.Ui_CoreWindow):
 		#super(self.__class__, self).__init__()
 		super(CoreWindow, self).__init__(parent)
 		self.setupUi(self)	# This is defined in multiDoc_Design.py file automatically # It sets up layout and widgets that are defined
-		self.spectrometer = Spectrometer.Spectrometer(usb)	
+		#self.spectrometer = Spectrometer.Spectrometer(usb)	
+		self.spectrometer = 'spectrometer string for testing away from spectromter'
 
 		#menu bar
 		self.menufiles.triggered[QAction].connect(self.menuBar_action)
