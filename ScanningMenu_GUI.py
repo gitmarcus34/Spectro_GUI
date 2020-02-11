@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
+import math
 import random
 
 import numpy as np
@@ -15,146 +15,11 @@ import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu 
 			  # it also keeps events etc that we defined in Qt Designer
 import time
 
-class Canvas(FigureCanvas):
-	def __init__(self, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
-		self.figure = Figure(figsize=(width, height), dpi=dpi)
-		self.axes = self.figure.add_subplot(111)
 
-		FigureCanvas.__init__(self, self.figure)
-		self.setParent(parent)
-		self.entSize = entSize
-		self.exitSize = exitSize
-		self.stepIncrement = stepIncrement
-		self.intTime = intTime
- 
-		self.plot()
-		
-	
-	def getFigure(self):
-		"""return the figure so that we could export it as png/jpg
-		"""
-		return self.figure	
- 
-	def plot(self):
-		randNum = random.random()
-		print(randNum)
-		x = np.array([random.random(), random.random(),random.random()])
-		y = [1, 2, 3]
-		ax = self.figure.add_subplot(111)
-		ax.plot(x, y)
-		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
-
-		ax.set_xlabel('Wavelength')
-		ax.set_ylabel('Intensity')
- 
-
-class Error_Message(QMessageBox):
-	def __init__(self, title, text = 'Error', checked = False, parent = None):
-		super(Error_Message, self).__init__(parent)
-		self.setWindowTitle(title)
-		self.setText(text)
-		self.checked = checked
-		
-		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
-		self.setMinimumSize(QtCore.QSize(600, 300))
-		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
-
-		self.checkBox = QCheckBox()
-		if self.checked:
-			self.checkBox = QCheckBox()
-			self.setCheckBox(self.checkBox)
-			
-	def setChecked(self, newBox = True):
-		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
-		"""
-		if newBox:
-			self.setCheckBox(self.checkBox)
-			
-		elif newBox == False:
-			#remove the check box but be sure to not destroy an instance of checkbox
-			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
-	
-	def run():
-		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
-		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
-		form.show()						 # Show the form
-		app.exec_()	
-
-class BusyDots_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self,progressBar = None, parent = None):
-		super(BusyDots_Thread, self).__init__(parent)
-		self.progressBar = progressBar
-		self.busy = True
-		
-	def triggerFinish(self, busy = False):
-		"""call with busy = False to trigger run to return
-		"""
-		self.busy = busy
-
-	
-	def run(self):
-		while self.busy:		
-			barMessage = self.progressBar.text()
-			if barMessage[-3:] != '...':
-				self.progressBar.setFormat("{}.".format(barMessage))			
-			else:
-				self.progressBar.setFormat(barMessage[:-3])
-			time.sleep(0.5)
-			self.actionSignal.emit()
-		return
-class SetScan_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
-		super(SetScan_Thread, self).__init__(parent)
-		
-		self.spectrometer = spectrometer
-		self.lowerWave_steps = lowerWave_steps
-		self.upperWave_steps = upperWave_steps
-		self.stepIncrement_steps = stepIncrement_steps
-		self.intTime = intTime
-		self.entSize = entSize
-		self.exitSize = exitSize
-		self.gain = gain
-		self.grating = grating
-		self.detector = detector
-		
-	
-	def run(self):
-		time.sleep(2)
-		#response = a.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime))
-		#print("Apply Settings Response: ", responseApply)
-		responseApply = True
-		if responseApply:
-			print('settings applied') 
-		return
-		
-		
-class StartScan_Thread(QThread):
-	actionSignal = pyqtSignal()
-	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
-		super(StartScan_Thread, self).__init__(parent)
-		self.spectrometer = spectrometer
-		self.lowerWave_steps = lowerWave_steps
-		self.upperWave_steps = upperWave_steps
-		self.grating = grating
-		self.stepIncrement_steps = stepIncrement_steps
 
 		
-	
-	def run(self):
-		print('Scan started!')
-		time.sleep(2)
-		#response = self.spectrometer.startScan()
-		response = True
-		if response == 0: #check if scan has ended
-			print('gathering data')
-			#steps, intensities = self.spectrometer.getScanData()
-			
 		
 
-		return
-			
 
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
@@ -194,10 +59,11 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		#bar menu
 		##window paths
+		self.menubar.setNativeMenuBar(False)
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
-		#scan parameters menus
+		#scan parameters menus and dictionay mappins of menubar a
 		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
 		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
 		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}
@@ -208,7 +74,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.menuGrating.triggered[QAction].connect(self.menuBar_action)
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
 		
-		#subwindow control options
+		#subwindow control options (map subwindow actions to the layouts of each subwindow so that actions can be used to trigger changes to widgets in subwindow layout)
 		self.menu_SubwindowPlots.triggered[QAction].connect(self.menuBar_action)
 		self.subPlotOptions = {self.actionTiled: 'tiled', self.actionCascade: 'cascade', self.actionPlotA: self.subLayoutA, self.actionPlotB: self.subLayoutB, self.actionPlotC: self.subLayoutC, self.actionPlotD: self.subLayoutD}
 		
@@ -251,7 +117,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.ExportJPG_Button.clicked.connect(self.exportJPG)
 		self.ExportCSV_Button.clicked.connect(self.exportCSV)
 		
-		###Error Messages
+		###Error Messages (note some error messages have multiple references so titles and error messages are defined when needed - see self.applysettings
 		self.warning_suggestedRange1800 = Error_Message("Warning: Range Suggestion")
 		self.warning_suggestedRange1800.setGeometry(QtCore.QRect(800, 500, 600, 300))
 		self.warning_suggestedRange1800.setIcon(QMessageBox.Warning)
@@ -270,10 +136,13 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 		
 	def busytext_progressbar(self):
+		"""This function is made incase specific actions should be coded in before each start of each busyMessageThread
+		"""
 		print("basic thread starting")
 		self.busyMessageThread.start()
 		
 	
+	###Update relevant widgets when as slider is changed by user
 	def sliderEntranceSlit_Change(self, slider_val):
 		self.lcdNum_EntranceSlider.display(slider_val)
 		
@@ -292,18 +161,20 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	
 	###funtions/slots 
 	def applysettings(self):
-		print('Applying Settings!')
-		#time.sleep(1.8)
+		"""	Apply the current settings inputed by user on scanning menu.  Apply settings is threaded so that GUI does not lock up during scan.
+			The user should press start scan after the progress bar has been set to full.  It is advised that user does not press start scan
+			during this time period.
+		"""
+		print('applysettings slot received signal')
 		self.busytext_progressbar()		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
-		self.stepSize_nm = self.StepSizeSlider.value()
+		self.stepSize_nm = self.incremented_val
 		self.lowerWavelen_nm = self.lowerWavelength_input.text()
 		self.upperWavelen_nm = self.upperWavelength_input.text()
 		
 		print('Detector:', self.detector, '; Gain:', self.gain, '; Grating:', self.grating)
-		
 		print('Entrance Width:', self.entSize)
 		print('Exit width:', self.exitSize)
 		print('Integration time:', self.intTime)
@@ -361,31 +232,32 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		#If pass all errors then update progress bar and proceed to calculations
 		self.busytext_progressbar()
-
 		self.progressBar.reset()
 		self.progressBar.setFormat('Applying Settings!')
 		self.progressBar.setValue(10)
 		
+		#calculations and step-unit conversions
 		self.lowerWave_steps, self.upperWave_steps = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen_nm), self.convert_NMtoSTEPS(self.grating, self.upperWavelen_nm)]
 		self.stepFactor_nm_step = self.convert_NMtoSTEPS(self.grating, getFactor = True) #setting getFactor param to true returns the step factor of the given grating
 		self.stepIncrement_steps = np.round(self.stepSize_nm/self.stepFactor_nm_step)
 		print("lowStep: {}, highStep: {}, stepIncrement: {}".format(self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps))
 		
+		#Notify user that settings have begun to be applied and update progress bar
 		print('Applying Settings and Preparing monochromator for scanning')
 		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
 		self.progressBar.setValue(60)
 		
-		self.setscan_thread = SetScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		#Call threaded settings application (thread allows settings application to happen in the background without affecting the users control of the GUI)
+		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
 		self.setscan_thread.start()
-		#time.sleep(5)
-		#responseApply = self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(incTime),str(totalTime)):
-		
-		#self.setscan_thread.quit()
-		#self.setscan_thread.wait()
 		self.setscan_thread.finished.connect(self.applythreadFinished)
 	
 	def applythreadFinished(self):
+		"""A slot for the finished signal produced by the end of apply settings thread process
+		"""
 		print('Thread is finished!')
+		
+		#update the progress bar to indicate settings are applied
 		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
 		self.progressBar.setValue(100)
 		self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
@@ -395,27 +267,72 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 		
 	def startscan(self):
+		"""Start a wavelength scan which is threaded so that the GUI does not freeze up during scan.
+		"""
 		print('Starting Scan!')
-		#canvas = Canvas(self, width=8, height=4)
-		#self.subLayoutA.addWidget(canvas)
-		#self.plot_subwindowA.show()
-		self.startScan_thread = StartScan_Thread('spectrometer', self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
+		#Thread the start scan so that the user can have control over GUI during scan in progress
+		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
 		self.startScan_thread.start()
-
 		self.startScan_thread.finished.connect(self.startThreadFinished)
+		
 	
 	def startThreadFinished(self):
 		print('scan complete!')
 		
-		#create a canvas for the designated plot (designate by choosing the corresponding option in 'subwindow_plots drop down menu)
+		#Get the data
+		self.steps,self.intensities = self.spectrometer.getDataScan()
+		print('should print steps and intensities:', self.steps, self.intensities)
+		
+		#Convert steps to nm
+		for i in range(len(self.steps)):
+			if math.isnan(float(self.steps[i])):
+				self.steps[i]=0.0
+
+			grating = self.grating
+			lowerWavelen_nm = float(self.lowerWavelen_nm)
+			if self.grating == '1800 l/mm (Vis)':
+				startingValue = np.round(self.lowerWavelen_nm/0.0041666667)*0.0041666667
+			elif self.grating == '600 l/mm (IR)':
+				startingValue = np.round(lowerWavelen_nm/0.0125)*0.0125
+
+			if self.grating == '1800 l/mm (Vis)':
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(self.incremented_val))
+			elif self.grating == '600 l/mm (IR)':
+				self.steps[i] = float(startingValue) + ((self.steps[i]-1)*float(self.incremented_val))
+
+		#Check for nans (If nan, make it a 0)
+		for i in range(len(self.intensities)):
+			if math.isnan(float(self.intensities[i])):
+				self.intensities[i] = 0.0
+
+		#Convert steps and intensities to float values for accuracy
+		self.steps = self.steps.astype('float64')
+		self.intensities = self.intensities.astype('float64')
+		
+		#store steps and intensities to scanData tuple to pass into following plot canvas definition 
+		scanData = (self.steps, self.intensities)
+		
+		
+		###Canvas to Subwindow managment
+		#create a canvas for the designated subwindow (designate by choosing the corresponding option in 'subwindow plots' drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(self.entSize, self.exitSize, self.intTime, self.z, width=8, height=4, parent = self)
+				canvas = Canvas(scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
 				
-				if action in self.actions_figures:
-					oldCanvas = self.actions_figures[action][-1]
+				if action in self.actions_figures: #Check if there is a canvas in the actions corresponding subwindow already and remove canvas if true
+					"""	Note I made the values of actions_figures lists in case I ever wanted to add functionality for multiple graphs per subwindow. 
+						so these next lines are sort of redundant looking since I could just have easily  said self.actions_figures[action] = newCanvas
+						to replace the old canvas.  But again I'm leaving it here just to note that it is possible to graph multiple graphs
+						per plot by commenting out the removals of old canvases
+					"""
+					#Add new canvas to subwindow
+					self.actions_figures[action].append(canvas)
+					#Remove the old canvas
+					oldCanvas = self.actions_figures[action][0]
 					self.subPlotOptions[action].removeWidget(oldCanvas)
 				
+				else: #Add canvas to subwindow if subwindow is checked and no canvas exists in it yet
+					self.actions_figures[action] = [canvas]
 				self.subPlotOptions[action].addWidget(canvas)
 		
 		#add the canvas to the action_figures dictionary mapping
@@ -425,7 +342,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 					self.actions_figures[action].append(canvas)
 				else:
 					self.actions_figures[action] = [canvas]
-				
+		
+
+
+	#Exporting functionality
 	def exportPNG(self):
 		fileName = self.saveFileDialog('.PNG')
 		#figure = self.canvas.getFigure()
@@ -442,6 +362,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 	
 	def saveFileDialog(self, fileType):
+		"""Will prompt user to save file as specific type. called by exportPNG,JPG,CSV slots connected to corresponding buttons on scanning menu
+		"""
 		options = QFileDialog.Options()
 		options |= QFileDialog.DontUseNativeDialog
 		
@@ -476,11 +398,15 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	
 
 	def menuBar_action(self, action):
-		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
+		"""#This slot function handles all the action signals of the menu bar.  Essentially Checks which dictionary mapping a recently triggered action signal
+			belongs to and then makes corresponding changes of each action taking advantage of the dictionary mappings to make some of these changes.
+			For example, if user wants to change the gain setting of the detector from AUTO to 1X then they click 1X which triggers an action called action 1X
+			to connect to menuBar_action slot here where self.gain = self.gainOptions[action1X] = '1X'. Then self.gain is usuable for other operations or passings.
+			After user clicks 1X a check mark will move from beside AUTO to beside 1X - this action is also handled here.
 		"""
 		print("menu bar action triggered")
 		if action == self.actionMainMenu:
-			#Check if subwindow already exists, show it and its widgets in case user had exited out.
+			#Check if main menu subwindow already exists in core window mdiArea, show it and its widgets in case user had exited out.
 			if self.mainmenu_sub in self.mdiArea.subWindowList():
 				print('returned to main menu')
 				self.mainmenu_sub.show()
@@ -494,7 +420,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		elif action == self.actionTimeMenu:
 			print('Triggered time base scanning')
-		#Check if subwindow already exists, show it and its widgets in case user had exited out.
+			
+			#Check if time base scanning subwindow already exists in corewindow mdiArea, show it and its widgets in case user had exited out.
 			if self.tbsmenu_sub in self.mdiArea.subWindowList():
 				print('returned to time menu')
 				self.tbsmenu_sub.show()
@@ -505,29 +432,32 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				print('added time menu to mdiArea')
 				self.mdiArea.addSubWindow(self.tbsmenu_sub)
 				self.tbsmenu_sub.show()
-				
+		
+		#Managa detector settings
 		elif action in self.detectorOptions:
 			self.detector = self.detectorOptions[action]
 			print('Detector changed to "{}"!'.format(self.detector))
 			
-		#set the check mark next to the new detector setting
+			#set the check mark next to the new detector setting
 			for act in self.detectorOptions:
 				if act.isChecked():
 					act.setChecked(False)
 					
 			action.setChecked(True)
-			
+		
+		#manage gain settings
 		elif action in self.gainOptions:
 			self.gain = self.gainOptions[action]
 			print('Gain Changed to "{}"!'.format(self.gain))
 			
-		#set the check mark next to the new detector setting
+			#set the check mark next to the new detector setting
 			for act in self.gainOptions:
 				if act.isChecked():
 					act.setChecked(False)
 					
 			action.setChecked(True)
 			
+		#manage grating settings (note changing the grating alters some of the parameters)
 		elif action in self.gratingOptions:
 			self.grating = self.gratingOptions[action]
 			
@@ -538,6 +468,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			self.StepSizeSlider.setMaximum(self.maxStepSize_steps)
 			self.StepSizeSlider.setTickInterval(self.tickInterval)
 			
+			#manage the place holder text that is displayed in empty wavelength input textboxes.
 			if self.grating == '600 l/mm (IR)':
 				self.upperWavelength_input.setPlaceholderText("1000")
 			elif self.grating == '1800 l/mm (Vis)':
@@ -545,13 +476,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			
 			print('Grating changed to "{}"!'.format(self.grating))
 			
-			#set the check mark next to the new detector setting
+			#set the check mark next to the new grating setting
 			for act in self.gratingOptions:
 				if act.isChecked():
 					act.setChecked(False)
 					
 			action.setChecked(True)
-			
+		
+		#manage the sudwindow settings 
 		elif action in self.subPlotOptions:
 			if action == self.actionCascade:
 				self.sub_mdiArea.cascadeSubWindows()
@@ -569,7 +501,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				print('set view to subwindow plot C')
 			elif action == self.actionPlotD:
 				print('set view to subwindow plot D')
-				
+			
+			#set the check mark next to the new subwindow setting
 			for act in self.subPlotOptions:
 				if act.isChecked() and (action != self.actionTiled and action != self.actionCascade):
 					act.setChecked(False)
@@ -626,9 +559,185 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		return False
 		
 
+class Canvas(FigureCanvas):
+	"""Note that FigureCanvas is a matplotlib designed QObject so it can be treated correspondignly - we can add it to sublayors like a widget using sublayor.addWidget(Canvas) 
+	"""
+	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
+		self.figure = Figure(figsize=(width, height), dpi=dpi)
+		self.axes = self.figure.add_subplot(111)
+
+		FigureCanvas.__init__(self, self.figure)
+		self.setParent(parent)
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.stepIncrement = stepIncrement
+		self.intTime = intTime
+		self.steps, self.intensities = scanData
+ 
+		self.plot()
+		
+	
+	def getFigure(self):
+		"""return the figure so that we could export it as png/jpg
+		"""
+		return self.figure	
+ 
+	def plot(self):
+		#randNum = random.random()
+		#y = np.array([random.random(), random.random(),random.random()])
+		#x = [1, 2, 3]
+		print('intensities from canvas class: ', self.intensities)
+		ax = self.figure.add_subplot(111)
+		ax.plot(self.steps, self.intensities)
+		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
+
+		ax.set_xlabel('Wavelength')
+		ax.set_ylabel('Intensity')
+ 
+
+class Error_Message(QMessageBox):
+	"""This error message is made so that the coders could add more general settings controlt that will make coding more clean. This way certain aspects of
+		a QMessageBox do not have to be repeatedly defined for similar sets of different topes of error and warning messages. 
+	"""
+	def __init__(self, title, text = 'Error', checked = False, parent = None):
+		super(Error_Message, self).__init__(parent)
+		self.setWindowTitle(title)
+		self.setText(text)
+		self.checked = checked
+		
+		self.setGeometry(QtCore.QRect(800, 500, 600, 300))
+		self.setMinimumSize(QtCore.QSize(600, 300))
+		#self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:1, y2:0, stop:0.328358 rgba(159, 212, 255, 127), stop:1 rgba(255, 255, 255, 255));")
+
+		self.checkBox = QCheckBox()
+		if self.checked:
+			self.checkBox = QCheckBox()
+			self.setCheckBox(self.checkBox)
 			
+	def setChecked(self, newBox = True):
+		"""set checked to True so that checkbox is created, or set checked to false to remove the widget"
+		"""
+		if newBox:
+			self.setCheckBox(self.checkBox)
+			
+		elif newBox == False:
+			#remove the check box but be sure to not destroy an instance of checkbox
+			self.checkBox.setEnabled(False) #ths ensures that self.checkBox exists the next time setChecked is called 
+	
+	def run():
+		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
+		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
+		form.show()						 # Show the form
+		app.exec_()	
+
+class BusyDots_Thread(QThread):
+	"""	A thread object that essentially creates repeating '.' '..' '...' to indicate to use that a process occuring in the text of the
+		progress bar passed as the BusyDots_Thread object parameter. 
+	"""
+	
+	actionSignal = pyqtSignal()
+	def __init__(self,progressBar = None, parent = None):
+		super(BusyDots_Thread, self).__init__(parent)
+		self.progressBar = progressBar
+		self.busy = True
 		
+	def triggerFinish(self, busy = False):
+		"""call with busy = False to trigger run to return
+		"""
+		self.busy = busy
+
+	
+	def run(self):
+		while self.busy:		
+			barMessage = self.progressBar.text()
+			if barMessage[-3:] != '...':
+				self.progressBar.setFormat("{}.".format(barMessage))			
+			else:
+				self.progressBar.setFormat(barMessage[:-3])
+			time.sleep(0.5)
+			self.actionSignal.emit()
+		return			
 		
+class SetScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
+		super(SetScan_Thread, self).__init__(parent)
+		
+		self.spectrometer = spectrometer
+		self.lowerWave_steps = lowerWave_steps
+		self.upperWave_steps = upperWave_steps
+		self.stepIncrement_steps = stepIncrement_steps
+		self.intTime = intTime
+		self.entSize = entSize
+		self.exitSize = exitSize
+		self.gain = gain
+		self.grating = grating
+		self.detector = detector
+		
+	
+	def run(self):
+		#Prepare Gain setting:
+		if self.gain=='AUTO':
+			gain=4
+
+		if self.gain=='1x':
+			gain=0
+
+		if self.gain=='10x':
+			gain=1
+	 
+		if self.gain=='100x':
+			gain=2
+
+		if self.gain=='1000x':
+			gain=3
+
+		#Prepare mirror setting:
+		if self.detector=='Side':
+			detector = 's'
+
+		if self.detector=='Front':
+			detector = 'f'
+
+		#Prepare grating setting:
+		if self.grating=='1800 l/mm (Vis)':
+			grating = 'vis'
+
+		if self.grating=='600 l/mm (IR)':
+			grating = 'ir'
+
+
+		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector)
+
+		print("Apply Settings Response: ", response)
+		if response == 0:
+			print('settings applied') 
+		return	
+		
+class StartScan_Thread(QThread):
+	actionSignal = pyqtSignal()
+	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
+		super(StartScan_Thread, self).__init__(parent)
+		self.spectrometer = spectrometer
+		self.lowerWave_steps = lowerWave_steps
+		self.upperWave_steps = upperWave_steps
+		self.grating = grating
+		self.stepIncrement_steps = stepIncrement_steps
+
+		
+	
+	def run(self):
+		print('Scan started!')
+		response = self.spectrometer.startScan()
+		print('start scan response: ', response)
+		if response == 0: #check if scan has ended
+			print('gathering data')
+			#steps, intensities = self.spectrometer.getScanData()
+		else:
+			print('bad response from spectrometer')
+		
+		return
+			
 		
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication

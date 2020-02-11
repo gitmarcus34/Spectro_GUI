@@ -5,7 +5,7 @@
 
 import struct
 import serial
-#from serial import Serial
+from serial import Serial
 import sys
 import math
 import numpy as np 
@@ -936,7 +936,7 @@ class Spectrometer:
 	#Function to collect data after scan complete
 	#Parameters: cycle=the cycle number that you wish to collect data from, in the form of a string
 	#Returns: steps=the numpy array of steps  intensities=the numpy array of measured intensities
-	def getScanData(self,cycle='1', timeBaseScan = False):
+	def getDataScan(self,cycle='1', timeBaseScan = False):
 
 		if timeBaseScan == False:
 			cycle = str.encode(cycle)
@@ -967,7 +967,7 @@ class Spectrometer:
 
 		length = int(output[0])
 
-		print(length)
+		print('length of intensities list: ', length)
 
 		#file1 = open("Spectrum.txt","w")
 
