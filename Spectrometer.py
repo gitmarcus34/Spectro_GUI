@@ -20,7 +20,7 @@ class Spectrometer:
 	def __init__(self,usb):
 		self.usb = usb
 		self.usbdir = '/dev/' + self.usb
-		self.s = serial.Serial(self.usbdir,19200,timeout=0.3)
+		self.s = serial.Serial(self.usbdir,19200,timeout=0.3, dsrdtr=True)
 		print(self.s)
 
 	#Determine what menu the device is in. Prints where the device is.
@@ -736,7 +736,7 @@ class Spectrometer:
 		   scan status becomes idle or not used then 'Scan Complete!' is printed. 
 		"""
 		
-		self.s = serial.Serial(self.usbdir,19200,timeout=0.03)
+		self.s = serial.Serial(self.usbdir,19200,timeout= 0.03)
 		print(self.s) #prints the current port settings.
 		self.s.write(b'q') #write the start scan command
 		
@@ -775,8 +775,7 @@ class Spectrometer:
 		r = r.decode('utf-8')
 		
 		if totalTime != 0:
-			print('done scanning, waiting for port availability')
-			time.sleep((totalTime/1000)+5)
+			time.sleep((totalTime)+5)
 		self.s = serial.Serial(self.usbdir,19200,timeout=0.3)
 
 		while r!='o0\r' and r!='o5\r':
@@ -846,17 +845,13 @@ class Spectrometer:
 		output = output.decode('utf-8')
 		 
 		#note that output is string so must extract desired elements like list
-		confirmation = output[0]
+		#confirmation = output[0]
 		try:
-			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be adjusted if using cycle scanning if cycle # > 9
+			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be changed if using cycle scanning and if cycle # > 9
 			print('position of last data point:', lastDataPos)
 			return(lastDataPos)
 		except ValueError:
-			print('should be int intensity string', output[1: len(output)-3], type(output[1: len(output)-3]))
-			time.sleep(0.001)
-			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be adjusted if using cycle scanning if cycle # > 9
-		print(lastDataPos)
-		return lastDataPos
+			print('Bad output for last position of data point. lastDataPos will be returned as None.')
 		#cycleNumber = output[len(output)-2:]
 
 

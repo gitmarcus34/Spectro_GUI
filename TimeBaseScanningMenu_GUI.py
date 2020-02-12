@@ -567,8 +567,11 @@ class GetRealTimeData_Thread(QThread):
 			#get the postiion of the last data point collected by the spectrometer and to save that data point to the end of the csv file (live = true sends lastDataPos to realtimedata.csv).
 			try:
 				lastDataPos = self.spectrometer.getLastDataPos()
-				intensity = self.spectrometer.getDataFromPos(lastDataPos, live = True)
-				print('intensity:', intensity)
+				if lastDataPos is not None:	
+					intensity = self.spectrometer.getDataFromPos(lastDataPos, live = True)				
+					print('intensity:', intensity)
+				else:
+					print('Could not get last data position. Fetching the next one')
 
 				if self.spectrometer.getScanStatus() == 0:
 					endFlag = False
@@ -584,7 +587,6 @@ class GetRealTimeData_Thread(QThread):
 			#time.sleep(self.timeIncrement/2) 
 	
 	def run(self):
-		time.sleep(5)
 		self.getRealTimeData()
 	
 	
