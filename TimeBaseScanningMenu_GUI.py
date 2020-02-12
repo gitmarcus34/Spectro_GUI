@@ -18,7 +18,7 @@ import time
 import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning menu and scanning related things like time base scanning and range scanning options
 			  # it also keeps events etc that we defined in Qt Designer
 
-
+import plotbuilder
 		
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
@@ -261,7 +261,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		
 		#start both scannin_thread and realtime data thread at the same time, realTimeData.csv should update often as data is acquired during scan
-		self.scanning_thread.start(self.totalTime)
+		self.scanning_thread.start(priority = QThread.LowPriority)
 		#self.realtimedata_thread.start()
 
 		"""print('timeIncrement: ', self.timeInc/1000)
@@ -276,8 +276,15 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		"""
 
 	def startlivedata(self):
-		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000)
-		self.realtimedata_thread.start()
+		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000, self.subLayoutA)
+		self.realtimedata_thread.start(priority = QThread.HighPriority)
+
+		#self.realplot_thread = RealTimePlot_Thread(self.subLayoutA, self.timeInc)
+		#self.realplot_thread.start(priority = QThread.HighestPriority)
+
+		self.anim = plotbuilder.AnimatedPlot()
+		self.anim.runAnimate()
+
 		
 	def endscan(self):
 		"""Slot for endScan_Button
@@ -554,6 +561,8 @@ class GetRealTimeData_Thread(QThread):
 		super(GetRealTimeData_Thread, self).__init__(parent)
 		self.spectrometer = spectrometer
 		self.timeIncrement = timeIncrement
+		
+		
 	
 	def getRealTimeData(self):
 	
@@ -567,7 +576,7 @@ class GetRealTimeData_Thread(QThread):
 			#get the postiion of the last data point collected by the spectrometer and to save that data point to the end of the csv file (live = true sends lastDataPos to realtimedata.csv).
 			try:
 				lastDataPos = self.spectrometer.getLastDataPos()
-				if lastDataPos is not None:	
+				if lastDataPos is not None:
 					intensity = self.spectrometer.getDataFromPos(lastDataPos, live = True)				
 					print('intensity:', intensity)
 				else:
@@ -607,7 +616,7 @@ class AnimatedPlot(FigureCanvas):
 		lines = graph_data.split('\n')
 		positions = []
 		intensities = []
-		print('animating')
+		print('animating: ', i)
 
 		for line in lines:
 			if len(line) > 1:
@@ -623,6 +632,30 @@ class AnimatedPlot(FigureCanvas):
 	def runAnimate(self, animTime = 20):
 		print('start to animate')
 		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
+
+
+class RealTimePlot_Thread(QThread):
+	"""Thread that gets data in real time to be plotted on a graph in real time.
+	"""
+	def __init__(self, subLayout, timeIncrement, parent = None):
+		super(RealTimePlot_Thread, self).__init__(parent)
+		self.timeIncrement = timeIncrement
+		self.anim = AnimatedPlot()
+		self.subLayout = subLayout
+		self.anim.animate(0)
+		self.subLayout.addWidget(self.anim)
+	
+	def repeatAnimate(self):
+		for i in range(100):
+			self.subLayout.removeWidget(self.anim)
+			time.sleep(self.timeIncrement/500)
+			self.anim.animate(i)
+			self.subLayout.addWidget(self.anim)
+			time.sleep(self.timeIncrement/500)
+	
+	def run(self):
+		self.repeatAnimate()
+ 
 		
 					
 def main():

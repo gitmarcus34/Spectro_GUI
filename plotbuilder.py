@@ -11,9 +11,6 @@ class AnimatedPlot:
 		self.fig = plt.figure()
 		self.ax1 = self.fig.add_subplot(1,1,1)
 
-		self.fig2 = plt.figure()
-		self.ax2 = self.fig.add_subplot(1,1,1)
-
 	def animate(self, i):
 		graph_data = open('realTimeData.csv','r').read()
 		lines = graph_data.split('\n')
@@ -26,15 +23,13 @@ class AnimatedPlot:
 				positions.append(float(pos))
 				intensities.append(float(intensity))
 
-				intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
+				#intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
 		self.ax1.clear()
 		self.ax1.plot(positions, intensities)
 
 
 	def runAnimate(self, animTime = 20):
 		ani = animation.FuncAnimation(self.fig, self.animate, interval=100)
-		self.fig.draw()
+		plt.show()
 		
-		time.sleep(animTime)
-		self.anim.event_source.stop()
 
