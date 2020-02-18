@@ -19,6 +19,7 @@ import TimeBaseScanningMenu_Design as TBS_Design # This file holds our scanning 
 			  # it also keeps events etc that we defined in Qt Designer
 
 import plotbuilder
+import threading
 		
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
@@ -264,16 +265,6 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.scanning_thread.start(priority = QThread.LowPriority)
 		#self.realtimedata_thread.start()
 
-		"""print('timeIncrement: ', self.timeInc/1000)
-		
-		anim = AnimatedPlot()
-		self.subLayoutA.addWidget(anim)
-		
-		anim.runAnimate()
-		#for i in range(160):
-		#	anim.animate(i)
-		#	time.sleep(self.timeInc/1000)
-		"""
 
 	def startlivedata(self):
 		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000, self.subLayoutA)
@@ -296,13 +287,13 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		totalTime = 0
 		while endFlag:
 			try:
-				#response_end = a.scanStop()
+				response_end = self.spectrometer.scanStop()
 				print('Scan Ended')
 				endFlag = False
 			except serial.serialutil.SerialException:
 				   time.sleep(0.001)
 				   totalTime += 0.001
-	
+		
 		
 		#self.spectrometer.setScanGUI('0','0','0',str(intTime),str(int(entSize/12.5)),str(int(extSize/12.5)),str(gain),grating,detector,'3',str(gratingPos),str(timeInc),str(totalTime)):
 
@@ -597,64 +588,15 @@ class GetRealTimeData_Thread(QThread):
 	
 	def run(self):
 		self.getRealTimeData()
-	
-	
-class AnimatedPlot(FigureCanvas):
-	def __init__(self):
-		width = 8
-		height = 4
-		dpi = 100
-		parent = None
-		self.figure = Figure(figsize=(width, height), dpi=dpi)
-		self.axes = self.figure.add_subplot(111)
 
-		FigureCanvas.__init__(self, self.figure)
-		#self.setParent(parent)
-
-	def animate(self, i):
-		graph_data = open('realTimeData.csv','r').read()
-		lines = graph_data.split('\n')
-		positions = []
-		intensities = []
-		print('animating: ', i)
-
-		for line in lines:
-			if len(line) > 1:
-				pos, intensity = line.split(',')
-				positions.append(float(pos))
-				intensities.append(float(intensity))
-
-				#intensities = noiseFilter.movingAverage(intensities, MA_Size = 6, lowerLim= 2000, upperLim = 2500, limFind = True)
-		self.axes.clear()
-		self.axes.plot(positions, intensities)
-
-
-	def runAnimate(self, animTime = 20):
-		print('start to animate')
-		ani = animation.FuncAnimation(self.figure, self.animate, interval=100)
-
-
-class RealTimePlot_Thread(QThread):
-	"""Thread that gets data in real time to be plotted on a graph in real time.
-	"""
-	def __init__(self, subLayout, timeIncrement, parent = None):
-		super(RealTimePlot_Thread, self).__init__(parent)
-		self.timeIncrement = timeIncrement
-		self.anim = AnimatedPlot()
-		self.subLayout = subLayout
-		self.anim.animate(0)
-		self.subLayout.addWidget(self.anim)
-	
-	def repeatAnimate(self):
-		for i in range(100):
-			self.subLayout.removeWidget(self.anim)
-			time.sleep(self.timeIncrement/500)
-			self.anim.animate(i)
-			self.subLayout.addWidget(self.anim)
-			time.sleep(self.timeIncrement/500)
+class Plot_Thread(QThread):
+	def __init__(self, parent = None):
+		super(Plot_Thread, self).__init__(parent)
+		self.anim = plotbuilder.AnimatedPlot()
 	
 	def run(self):
-		self.repeatAnimate()
+		self.anim.runAnimate()
+	
  
 		
 					

@@ -1048,7 +1048,10 @@ class Spectrometer:
 				row_count = sum(1 for row in liveDataFile) #count number of rows not to overwrite when writing
 				for i in range(row_count):
 					liveDataFile.readline()
-				liveData.writerow([dataPos, intensity])
+
+
+				if (intensity != '') and (intensity is not None): #sometimes writes nothing which causes problems with plotting
+					liveData.writerow([dataPos, intensity])
 
 		else:
 			dataPosEnc = str(dataPos)

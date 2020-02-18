@@ -306,14 +306,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.intensities = self.intensities.astype('float64')
 		
 		#store steps and intensities to scanData tuple to pass into following plot canvas definition 
-		scanData = (self.steps, self.intensities)
+		self.scanData = (self.steps, self.intensities)
 		
 		
 		###Canvas to Subwindow managment
 		#create a canvas for the designated subwindow (designate by choosing the corresponding option in 'subwindow plots' drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
+				canvas = Canvas(self.scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures: #Check if there is a canvas in the actions corresponding subwindow already and remove canvas if true
 					"""	Note I made the values of actions_figures lists in case I ever wanted to add functionality for multiple graphs per subwindow. 
@@ -354,8 +354,15 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.saveFileDialog('.JPG')
 		
 	def exportCSV(self):
-		self.saveFileDialog('.CSV')
-		
+		fileName = self.saveFileDialog('.CSV')
+		with open(fileName, 'w') as newFile:
+		   newFile.write('Wavelength(nm),Intensities\n')
+		   for i in range(len(self.steps)):
+			   newFile.write(str(self.steps[i]))
+			   newFile.write(',')
+			   newFile.write(str(self.intensities[i]))
+			   newFile.write('\n')
+	
 	
 	def saveFileDialog(self, fileType):
 		"""Will prompt user to save file as specific type. called by exportPNG,JPG,CSV slots connected to corresponding buttons on scanning menu
@@ -385,7 +392,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		totalTime = 0
 		while endFlag:
 			try:
-				#response_end = a.scanStop()
+				response_end = self.spectrometer.scanStop()
 				print('Scan Ended')
 				endFlag = False
 			except serial.serialutil.SerialException:
