@@ -1,6 +1,6 @@
 #Data noise filters
 import numpy as np
-
+import random
 def average(measurements):
 	return sum(measurements)/len(measurements)
 
@@ -19,4 +19,5 @@ def movingAverage(measurements, MA_Size, lowerLim, upperLim, limFind = False):
 		movingAverage = average(measurements)
 
 	measurements[-1] = movingAverage
+	#measurements[-1] = movingAverage
 	return measurements

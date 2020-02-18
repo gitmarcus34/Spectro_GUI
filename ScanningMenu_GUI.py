@@ -316,28 +316,18 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				canvas = Canvas(self.scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures: #Check if there is a canvas in the actions corresponding subwindow already and remove canvas if true
-					"""	Note I made the values of actions_figures lists in case I ever wanted to add functionality for multiple graphs per subwindow. 
-						so these next lines are sort of redundant looking since I could just have easily  said self.actions_figures[action] = newCanvas
-						to replace the old canvas.  But again I'm leaving it here just to note that it is possible to graph multiple graphs
-						per plot by commenting out the removals of old canvases
-					"""
+
 					#Add new canvas to subwindow
 					self.actions_figures[action].append(canvas)
-					#Remove the old canvas
-					oldCanvas = self.actions_figures[action][0]
-					self.subPlotOptions[action].removeWidget(oldCanvas)
+
+					#Remove the old canvas so that there is only one subplot per subwindow
+					oldCanvas = self.actions_figures[action][0] 	
+					self.subPlotOptions[action].removeWidget(oldCanvas) #remove from subwindow layout
+					self.actions_figures[action].remove(oldCanvas)	#remove from dictionary mapping
 				
 				else: #Add canvas to subwindow if subwindow is checked and no canvas exists in it yet
 					self.actions_figures[action] = [canvas]
 				self.subPlotOptions[action].addWidget(canvas)
-		
-		#add the canvas to the action_figures dictionary mapping
-		for action in self.subPlotOptions:
-			if action.isChecked():
-				if action in self.actions_figures:
-					self.actions_figures[action].append(canvas)
-				else:
-					self.actions_figures[action] = [canvas]
 		
 
 
