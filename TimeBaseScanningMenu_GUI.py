@@ -273,7 +273,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#self.realplot_thread = RealTimePlot_Thread(self.subLayoutA, self.timeInc)
 		#self.realplot_thread.start(priority = QThread.HighestPriority)
 
-		self.anim = plotbuilder.AnimatedPlot()
+		self.anim = plotbuilder.AnimatedPlot(self.timeInc/1000)
 		self.anim.runAnimate()
 
 		
@@ -492,16 +492,16 @@ class SetScan_Thread(QThread):
 		if self.gain=='AUTO':
 			gain=4
 
-		if self.gain=='1x':
+		if self.gain=='1X':
 			gain=0
 
-		if self.gain=='10x':
+		if self.gain=='10X':
 			gain=1
 	 
-		if self.gain=='100x':
+		if self.gain=='100X':
 			gain=2
 
-		if self.gain=='1000x':
+		if self.gain=='1000X':
 			gain=3
 
 		#Prepare mirror setting:
