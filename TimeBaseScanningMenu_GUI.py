@@ -23,6 +23,10 @@ import threading
 		
 
 class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
+
+	###Signals
+	endSignal = pyqtSignal() #signal for ending scan
+	
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
 		super(self.__class__, self).__init__()
 		self.setupUi(self)  # This is defined in StartUpMenu_Design.py file automatically # It sets up layout and widgets that are defined
@@ -147,17 +151,14 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.lcdNum_ExitSlider.display(slider_val)
 	
 	def sliderIntegrationTime_Change(self, slider_val):
-		maxIntTime_ms = 200
 		self.lcdNum_IntTimeSlider.display(slider_val)
 		
 	def sliderTimeIncrement_Change(self, slider_val):
-		maxTimeInc_ms = 500
 		self.lcdNum_TimeIncrementSlider.display(slider_val)
 
 	def sliderTotalTime_Change(self, slider_val):
-		maxTotalTime_sec = 200
-		totalTime = 200
-		self.lcdNum_TotalTimeSlider.display(slider_val)	
+		self.maxTotalTime = 600 #seconds
+		self.lcdNum_TotalTimeSlider.display((slider_val/100) * self.maxTotalTime)	
 		
 	#Button slots/funcs
 	def applysettings(self):
@@ -165,12 +166,12 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		"""
 		
 		print('Applying Settings!')
-		self.intTime = self.IntegrationTimeSlider.value()
-		self.entSize = self.EntranceSlitSlider.value()
-		self.exitSize = self.ExitSlitSlider.value()
-		self.timeInc = self.TimeIncrementSlider.value()
-		self.totalTime = self.TotalTimeSlider.value()
-		self.wavelength_nm = self.wavelength_input.text()
+		self.intTime = self.IntegrationTimeSlider.value() #milliseconds (!!!not in seconds)
+		self.entSize = self.EntranceSlitSlider.value()  #micrometers
+		self.exitSize = self.ExitSlitSlider.value() #micrometers
+		self.timeInc = self.TimeIncrementSlider.value() # millisec
+		self.totalTime = self.maxTotalTime*(self.TotalTimeSlider.value()/100) #seconds
+		self.wavelength_nm = self.wavelength_input.text() #nanometers
 		print('Detector:', self.detector, '; Gain:', self.gain, '; self.grating:', self.grating)
 		
 
@@ -203,14 +204,14 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			self.warning_suggestedRange1800.setText("Warning: For accurate results, scanning range should be between 300 and 870 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
 			if self.warning_suggestedRange1800.checkBox.isChecked() == False:
 				self.warning_suggestedRange1800.exec() #only execute the error message if the error box is unchecked
-			return #do not continue to calculations and settings application
+				return #do not continue to calculations and settings application
 		
 		elif (self.wavelength_nm < 300 or self.wavelength_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
 			self.warning_suggestedRange600.setText("Warning: For accurate results, scanning range should be between 300 and 1000 for the grating and detector in use! \n Uncheck the box below and press 'OK' if you would like to continue with your current input.") #make/remake error message
 			if self.warning_suggestedRange600.checkBox.isChecked() == False:
 				self.warning_suggestedRange600.exec() #make/remake error message #make/remake error message
-			return #do not continue to calculations and settings application
+				return #do not continue to calculations and settings application
 		
 		elif (self.timeInc < self.intTime) and self.timeInc != 0:
 			print('Displaying Error Message')
@@ -258,7 +259,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 			saved to realTimeData.csv file.
 		"""
 		#define start scan and real time data thread objects
-		self.scanning_thread = StartScan_Thread(self.spectrometer, self.totalTime)
+		self.scanning_thread = StartScan_Thread(self.spectrometer, self.totalTime, self.endSignal)
 		
 		
 		#start both scannin_thread and realtime data thread at the same time, realTimeData.csv should update often as data is acquired during scan
@@ -280,16 +281,17 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 	def endscan(self):
 		"""Slot for endScan_Button
 		"""
-		
 		print('Ending Scan!')
 		#Used to stop the current time base scan
-		endFlag = True
 		totalTime = 0
+		endFlag = True
 		while endFlag:
 			try:
 				response_end = self.spectrometer.scanStop()
+				self.endSignal.emit()
 				print('Scan Ended')
 				endFlag = False
+				
 			except serial.serialutil.SerialException:
 				   time.sleep(0.001)
 				   totalTime += 0.001
@@ -530,14 +532,21 @@ class SetScan_Thread(QThread):
 class StartScan_Thread(QThread):
 	"""Thread that starts a scan as well as get scan data in real time so that the user can access the GUI during a scan in progress.
 	"""
-	def __init__(self, spectrometer, totalTime, parent = None):
+	def __init__(self, spectrometer, totalTime, endSignal, parent = None):
 		super(StartScan_Thread, self).__init__(parent)
 		self.spectrometer = spectrometer
 		self.totalTime = totalTime
+		self.endSignal = endSignal
+
+	def endScan(self):
+		return
 	
 		
 	def run(self):
 		scanResponse = self.spectrometer.startScan(self.totalTime)
+
+		#If endscan button pressed then end this thread
+		self.endSignal.connect(self.endScan)
 		if scanResponse == 0:
 			print('Time Base Scan response indicates scan is complete')
 			return

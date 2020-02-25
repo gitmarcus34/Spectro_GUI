@@ -20,7 +20,7 @@ class Spectrometer:
 	def __init__(self,usb):
 		self.usb = usb
 		self.usbdir = '/dev/' + self.usb
-		self.s = serial.Serial(self.usbdir,19200,timeout=0.3, dsrdtr=True)
+		self.s = serial.Serial(self.usbdir,19200,timeout=1, dsrdtr=True)
 		print(self.s)
 
 	#Determine what menu the device is in. Prints where the device is.
@@ -320,7 +320,7 @@ class Spectrometer:
 			print("Initializing...")
 			timer += 1
 
-		#self.s = serial.Serial(self.usbdir,19200,timeout=0.3) #uncomment
+		self.s = serial.Serial(self.usbdir,19200,timeout=0.3) #uncomment
 
 		#If timeout occurs, exit
 		if timer>=10000:

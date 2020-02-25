@@ -10,8 +10,8 @@ class AnimatedPlot:
 		self.timeInc = timeInc
 
 		self.fig = plt.figure(figsize = [15, 10])
-		self.ax1 = self.fig.add_subplot(2,1,1)
-		self.ax2 = self.fig.add_subplot(2,1,2)
+		self.ax1 = self.fig.add_subplot(1,1,1)
+		#self.ax2 = self.fig.add_subplot(2,1,2)
 
 	def animate(self, i):
 		graph_data = open('realTimeData.csv','r').read()
@@ -57,7 +57,7 @@ class AnimatedPlot:
 
 	def runAnimate(self):
 		anim1 = animation.FuncAnimation(self.fig, self.animate, interval=(self.timeInc*1000))
-		anim2 = animation.FuncAnimation(self.fig, self.animate_fil, interval=(self.timeInc*1000))
+		#anim2 = animation.FuncAnimation(self.fig, self.animate_fil, interval=(self.timeInc*1000))
 		plt.show()
 		
 

@@ -14,9 +14,13 @@ import numpy as np
 import ScanningMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
 import time
+import serial
 
 
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
+	###Signals
+	endSignal = pyqtSignal() #signal for ending a scan in progress
+
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
 		super(self.__class__, self).__init__()
 		self.setupUi(self)  # This is defined in StartUpMenu_Design.py file automatically # It sets up layout and widgets that are defined
@@ -267,7 +271,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		"""
 		print('Starting Scan!')
 		#Thread the start scan so that the user can have control over GUI during scan in progress
-		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps)
+		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps, self.endSignal)
 		self.startScan_thread.start()
 		self.startScan_thread.finished.connect(self.startThreadFinished)
 		
@@ -385,6 +389,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				response_end = self.spectrometer.scanStop()
 				print('Scan Ended')
 				endFlag = False
+				self.endSignal.emit()
 			except serial.serialutil.SerialException:
 				   time.sleep(0.001)
 				   totalTime += 0.001
@@ -675,16 +680,16 @@ class SetScan_Thread(QThread):
 		if self.gain=='AUTO':
 			gain=4
 
-		if self.gain=='1x':
+		if self.gain=='1X':
 			gain=0
 
-		if self.gain=='10x':
+		if self.gain=='10X':
 			gain=1
 	 
-		if self.gain=='100x':
+		if self.gain=='100X':
 			gain=2
 
-		if self.gain=='1000x':
+		if self.gain=='1000X':
 			gain=3
 
 		#Prepare mirror setting:
@@ -714,20 +719,27 @@ class StartScan_Thread(QThread):
 		spectrometer indicating success/failure or completion of scan. 
 	"""
 	actionSignal = pyqtSignal()
-	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, parent = None):
+	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, endSignal, parent = None):
 		super(StartScan_Thread, self).__init__(parent)
 		self.spectrometer = spectrometer
 		self.lowerWave_steps = lowerWave_steps
 		self.upperWave_steps = upperWave_steps
 		self.grating = grating
 		self.stepIncrement_steps = stepIncrement_steps
+		self.endSignal = endSignal
+	
+	def endScan(self):
+		return
 
-		
 	
 	def run(self):
 		print('Scan started!')
 		response = self.spectrometer.startScan()
 		print('start scan response: ', response)
+
+		self.endSignal.connect(self.endScan) #end the scan if end scan button was pressed
+
+		#end this thread if scan reaches completion
 		if response == 0: #check if scan has ended
 			print('gathering data')
 			#steps, intensities = self.spectrometer.getScanData()
