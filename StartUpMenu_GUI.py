@@ -34,6 +34,18 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		#initialize button
 		self.Initialize_Button.clicked.connect(self.HR460_Initialize)
 		
+		###Progress Bar
+		self.progressSignal = self.spectrometer.getProgressSignal()
+		self.progressSignal.connect(self.updateProgressBar)
+		self.progressIncrement = 100/10
+
+	def updateProgressBar(self, message, startUp):
+		if startUp != 'start up':
+			return
+		self.progressBar.setFormat(message)
+		currentVal = self.progressBar.value()
+		self.progressBar.setValue(currentVal+self.progressIncrement)
+
 	
 	def mainmenu_path(self, action):
 		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
@@ -56,25 +68,34 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		"""When Inititalize button is pressed, initialize the spectrometer and update the progress bar. 
 		Opens Main Menu subwindow when done
 		"""
+		self.progressBar.reset()
+		
 		####initialize the spectrometer when intialize button is pressed.
 		print('spectrometer is initializing')
 		self.spectrometer.on()
 
+
+		self.progressSignal.emit('Setting monochromator motor speed', 'start up')
 		self.spectrometer.setMotorSpeed()
-		#self.progress['value']=60
-		#self.progress.update()
+
+		self.progressSignal.emit('Setting front (axial) entrance slit motor speed', 'start up')
 		self.spectrometer.setSlitSpeed('0')
-		#self.progress['value']=70
-		#self.progress.update()
+
+		self.progressSignal.emit('Setting side (lateral) entrance slit motor speed', 'start up')
 		self.spectrometer.setSlitSpeed('1')
-		#self.progress['value']=80
-		#self.progress.update()
+
+		self.progressSignal.emit('Setting front (axial) exit slit motor speed', 'start up')
 		self.spectrometer.setSlitSpeed('2')
-		#self.progress['value']=90
-		#self.progress.update()
+
+		self.progressSignal.emit('Setting front (lateral) exit slit motor speed', 'start up')
 		self.spectrometer.setSlitSpeed('3')
+
+		self.progressSignal.emit('Initializing: autocalibrating monochromator to base grating (1200 l/mm)', 'start up')
 		self.spectrometer.initialize()
+
+		self.progressSignal.emit('Spectrometer is Initialized and ready for scanning!', 'start up')
 		print('spectrometer is initialized')
+		self.progressBar.setValue(100)
 		
 		
 

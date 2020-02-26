@@ -16,6 +16,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class Spectrometer(QObject):
 	progressSignal = pyqtSignal(str, str)
+	dataSignal = pyqtSignal(int)
 
 	#Set up serial port connection.
 	#Parameters: USB port name in a string format.
@@ -27,8 +28,14 @@ class Spectrometer(QObject):
 		self.s = serial.Serial(self.usbdir,19200,timeout=1, dsrdtr=True)
 		print(self.s)
 
-	def getSignal(self):
+	def getProgressSignal(self):
 		return self.progressSignal
+
+	def getDataSignal(self):
+		return self.dataSignal
+
+	def getSerial(self):
+		return self.s
 
 	#Determine what menu the device is in. Prints where the device is.
 	#Parameters: NA
@@ -49,16 +56,23 @@ class Spectrometer(QObject):
 	#Turn on the device. Includes switching to intelligent mode and F main menu.
 	#Parameters: NA
 	#Returns: NA. Prints that it is done though.
-	def on(self):
+	def on(self, fromStartUpMenu = False):
 		self.s.write(b' ')
 		output=self.s.readline()
 		output=output.decode('utf-8')
 		timer = 0
+		
 
-		if output=='F':
+
+		if output=='F': ###This indicates the spectrometer is in the MAIN program and has already been accessed
+			if fromStartUpMenu:
+				self.progressSignal.emit('Already in MAIN program and intelligent communications mode', 'start up')
 			return
 
-		if output=='B':
+		if fromStartUpMenu:
+			self.progressSignal.emit('Switching from BOOT program to MAIN program', 'start up')
+
+		if output=='B': ###this indicates the spectrometer is in the BOOT program and the user needs to set to MAIN program for start up
 			self.s.write(b'O2000'+struct.pack('!B',0))
 			output = self.s.readline()
 			output = output.decode('utf-8')
@@ -73,6 +87,9 @@ class Spectrometer(QObject):
 				timer=timer-1
 
 			print("Switched to F mode!")
+			if fromStartUpMenu:
+				self.progressSignal.emit('Switched to MAIN program', 'start up')
+
 			return
 
 		else:
@@ -91,7 +108,14 @@ class Spectrometer(QObject):
 
 			except IndexError:
 				print('Not ready, trying again...')
+
+				if fromStartUpMenu:
+					self.progressSignal.emit('Not Ready, trying again... Close program and restart if this is taking a while', 'start up')
+	
 				self.on()
+
+			if fromStartUpMenu:
+				self.progressSignal.emit('Switiching to intelligent communications mode', 'start up')
 
 			#Switch device to intelligent mode
 			self.s.write(struct.pack('!B',247))
@@ -99,13 +123,19 @@ class Spectrometer(QObject):
 			output = output.decode('utf-8')
 			timer = 100
 
+
 			while output != '=' and timer>0:
+				if fromStartUpMenu:
+					self.progressSignal.emit('Bad Response for intelligent mode... Close program and restart if taking a while', 'start up')
+
 				print("Bad response for intelligent mode: " + output + ". Restarting...")
 				self.s.write(struct.pack('!B',247))
 				output = self.s.readline()
 				output = output.decode('utf-8')
 				timer=timer-1
 
+			if fromStartUpMenu:
+				self.progressSignal.emit('Switched to intelligent mode', 'start up')
 
 			print("Switched to intelligent mode.")
 		
@@ -138,6 +168,9 @@ class Spectrometer(QObject):
 				sys.exit('Exited because not in F mode!')
 
 			print("Ready!")
+
+			if fromStartUpMenu:
+				self.progressSignal.emit('Spectrometer controller is on and ready to initialize', 'start up')
 			return
 	
 	#Set the motor speed for the device. This needs to be done just before or just after initialization
@@ -1002,6 +1035,7 @@ class Spectrometer(QObject):
 			print(i)
 			i = str(i)
 			i = str.encode(i)
+			self.dataSignal.emit(i)
 			self.s.write(b'u' + i + b'\r')
 			output = self.s.read_until(b'\r',15)
 			output = output.decode('utf-8')

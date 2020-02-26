@@ -147,7 +147,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.progressBar.setValue(0)
 
 		#Progress Bar Signal (emits from spectrometer to let us know when to update the progress bar)
-		self.progressSignal = self.spectrometer.getSignal()
+		self.progressSignal = self.spectrometer.getProgressSignal()
 		self.progressSignal.connect(self.updateProgressBar)
 		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
 

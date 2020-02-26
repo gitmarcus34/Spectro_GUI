@@ -130,11 +130,22 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.progressBar.setValue(0)
 
 		#Progress Bar Signal (emits from spectrometer to let us know when to update the progress bar)
-		self.progressSignal = self.spectrometer.getSignal()
+		self.progressSignal = self.spectrometer.getProgressSignal()
 		self.progressSignal.connect(self.updateProgressBar)
 		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
 
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
+
+		###Signals
+		self.dataSignal = self.spectrometer.getDataSignal()
+		self.dataSignal.connect(self.checkBuffer)
+		self.spectroSerial = self.spectrometer.getSerial()
+
+
+	def checkBuffer(self, i):
+		receiveBytes = self.spectroSerial.in_waiting
+		outputBytes = self.spectroSerial.out_waiting
+		print('For Write number {}: Input buffer has: {} bytes; Output buffer has {} bytes.'.format(i, receiveBytes, outputBytes))
 
 
 	def busytext_progressbar(self):
@@ -177,7 +188,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			The user should press start scan after the progress bar has been set to full.  It is advised that user does not press start scan
 			during this time period.
 		"""
-		print('applysettings slot received signal')
+		#print('applysettings slot received signal')
 		#self.busytext_progressbar()		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
