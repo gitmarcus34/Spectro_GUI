@@ -20,7 +20,7 @@ import serial
 class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	###Signals
 	endSignal = pyqtSignal() #signal for ending a scan in progress
-
+	
 	def __init__(self, mdiArea = None,spectrometer = None, subwindow_dict = None):
 		super(self.__class__, self).__init__()
 		self.setupUi(self)  # This is defined in StartUpMenu_Design.py file automatically # It sets up layout and widgets that are defined
@@ -47,14 +47,6 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.plot_subwindowB.setWindowTitle('Plot Subwindow B')
 		self.plot_subwindowC.setWindowTitle('Plot Subwindow C')
 		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
-		
-		
-		###Thread Definitions
-		self.busyMessageThread = BusyDots_Thread(self.progressBar)
-		
-		#progress bar
-		self.progressBar.reset()
-		self.progressBar.setValue(0)
 		
 		#bar menu
 		##window paths
@@ -132,15 +124,35 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		self.error_inputNotInRange = Error_Message('Not In Range Error')
 		self.error_inputNotInRange.setIcon(QMessageBox.Critical)
-
 		
+		###Progress Bar
+		self.progressBar.reset()
+		self.progressBar.setValue(0)
+
+		#Progress Bar Signal (emits from spectrometer to let us know when to update the progress bar)
+		self.progressSignal = self.spectrometer.getSignal()
+		self.progressSignal.connect(self.updateProgressBar)
+		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
+
+		self.busyMessageThread = BusyDots_Thread(self.progressBar)
+
+
 	def busytext_progressbar(self):
 		"""This function is made in case specific actions should be coded in before each start of each busyMessageThread. 
 		Otherwise could just call self.busyMessageThread.start()
 		"""
-		print("basic thread starting")
 		self.busyMessageThread.start()
-		
+
+	def updateProgressBar(self, message, scan):
+		if scan == 'time base scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to time base scanning menu
+			return
+
+		currentVal = self.progressBar.value()
+		print(currentVal)
+		print(message)
+		self.progressBar.setValue(currentVal + self.progressIncrement)
+		self.progressBar.setFormat(message)
+				
 	
 	###Update relevant widgets when as slider is changed by user
 	def sliderEntranceSlit_Change(self, slider_val):
@@ -166,7 +178,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			during this time period.
 		"""
 		print('applysettings slot received signal')
-		self.busytext_progressbar()		
+		#self.busytext_progressbar()		
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
@@ -219,7 +231,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			if self.warning_suggestedRange1800.checkBox.isChecked() == False:
 				self.warning_suggestedRange1800.exec() #only execute the error message if the error box is unchecked
 					
-			return #do not continue to calculations and settings application
+				return #do not continue to calculations and settings application
 		
 		elif (self.lowerWavelen_nm < 300 or self.upperWavelen_nm > 1000) and self.grating == '600 l/mm (IR)': #check if in suggested range for detector and grating currently in use (may need to update for new sensors/gratings)
 			print('Displaying Error Message')
@@ -228,13 +240,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			if self.warning_suggestedRange600.checkBox.isChecked() == False:
 				self.warning_suggestedRange600.exec() #make/remake error message		
 			
-			return #do not continue to calculations and settings application
+				return #do not continue to calculations and settings application
 		
 		#If pass all errors then update progress bar and proceed to calculations
 		self.busytext_progressbar()
 		self.progressBar.reset()
+		self.progressBar.setValue(0)
 		self.progressBar.setFormat('Applying Settings!')
-		self.progressBar.setValue(10)
+		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
 		
 		#calculations and step-unit conversions
 		self.lowerWave_steps, self.upperWave_steps = [self.convert_NMtoSTEPS(self.grating, self.lowerWavelen_nm), self.convert_NMtoSTEPS(self.grating, self.upperWavelen_nm)]
@@ -245,7 +258,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#Notify user that settings have begun to be applied and update progress bar
 		print('Applying Settings and Preparing monochromator for scanning')
 		self.progressBar.setFormat('Monochromator is being prepared, this will only take a moment.')		
-		self.progressBar.setValue(60)
+		#self.progressBar.setValue(60)
 		
 		#Call threaded settings application (thread allows settings application to happen in the background without affecting the users control of the GUI)
 		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
@@ -258,8 +271,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		print('Thread is finished!')
 		
 		#update the progress bar to indicate settings are applied
-		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
 		self.progressBar.setValue(100)
+		self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
+		#self.progressBar.setValue(100)
 		self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
 		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread
 		self.busyMessageThread.triggerFinish(busy = True) #reset thread for next use
@@ -587,10 +601,11 @@ class Canvas(FigureCanvas):
 		print('intensities from canvas class: ', self.intensities)
 		ax = self.figure.add_subplot(111)
 		ax.plot(self.steps, self.intensities)
-		ax.set_title('Intensity vs Wavelength\n EntSlit: {}μm, ExitSlit: {}μm, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, self.exitSize, self.intTime, self.stepIncrement))
+		mu = r'$\mu$'
+		ax.set_title('Intensity vs Wavelength\n EntSlit: {}{}m, ExitSlit: {}{}m, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, mu, self.exitSize, mu, self.intTime, round(self.stepIncrement, 5)))
 
-		ax.set_xlabel('Wavelength')
-		ax.set_ylabel('Intensity')
+		ax.set_xlabel('Wavelength (nm)')
+		ax.set_ylabel('Intensity (counts)')
  
 
 class Error_Message(QMessageBox):

@@ -12,16 +12,23 @@ import numpy as np
 import csv
 import time
 
+from PyQt5.QtCore import QObject, pyqtSignal
 
-class Spectrometer:
+class Spectrometer(QObject):
+	progressSignal = pyqtSignal(str, str)
+
 	#Set up serial port connection.
 	#Parameters: USB port name in a string format.
 	#Returns: NA
 	def __init__(self,usb):
+		super(self.__class__, self).__init__()
 		self.usb = usb
 		self.usbdir = '/dev/' + self.usb
 		self.s = serial.Serial(self.usbdir,19200,timeout=1, dsrdtr=True)
 		print(self.s)
+
+	def getSignal(self):
+		return self.progressSignal
 
 	#Determine what menu the device is in. Prints where the device is.
 	#Parameters: NA
@@ -886,6 +893,12 @@ class Spectrometer:
 		
 		print(grating)
 		print(mirror)
+
+		if scan_Type == '0':
+			scan = 'wavelength scan'
+		elif scan_Type == '3':
+			scan = 'time base scan'
+
 		#Encode data to be sent to spectrometer
 		scanType = str.encode(scan_Type)
 		startPos = str.encode(startPos)
@@ -918,18 +931,25 @@ class Spectrometer:
 			print("Error! Returned: " + output)
 			return 1 
 		
+		self.progressSignal.emit('Adjusting Entrance Slit', scan) #1st out of 5 progress signals to be emitted in apply settings action
 		#Move slits
 		currentWidth = float(self.getSlitWidth('0'))
 		moveAmount = str(float(entSlit) - currentWidth)
 		self.moveSlit('0',moveAmount)
-
+		
+		self.progressSignal.emit('Adjusting Exit Slit', scan)
 		currentWidth = float(self.getSlitWidth('3'))
 		moveAmount = str(float(extSlit) - currentWidth)
 		self.moveSlit('3',moveAmount)
 
+		self.progressSignal.emit('Setting Exit Mirror to: {}'.format(mirror), scan)
 		self.setExitMirror(mirror)
+
+		self.progressSignal.emit('Setting Grating to : {}'.format(grating), scan)
 		self.setGrating(grating)
+
 		self.s.readline()
+		self.progressSignal.emit('Done Setting Parameters', scan)
 
 		print("Set scan parameters and prepared spectrometer for scanning!")
 		return 0

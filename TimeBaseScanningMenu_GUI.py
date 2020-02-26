@@ -141,9 +141,35 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		self.error_dataOverload = Error_Message('Data Overload')
 		self.error_dataOverload.setIcon(QMessageBox.Critical)
+
+		###Progress Bar
+		self.progressBar.reset()
+		self.progressBar.setValue(0)
+
+		#Progress Bar Signal (emits from spectrometer to let us know when to update the progress bar)
+		self.progressSignal = self.spectrometer.getSignal()
+		self.progressSignal.connect(self.updateProgressBar)
+		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
+
+		self.busyMessageThread = BusyDots_Thread(self.progressBar)
+
+	def busytext_progressbar(self):
+		"""This function is made in case specific actions should be coded in before each start of each busyMessageThread. 
+		Otherwise could just call self.busyMessageThread.start()
+		"""
+		self.busyMessageThread.start()
+
+	def updateProgressBar(self, message, scan):
+		if scan == 'wavelength scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to wavelength scanning menu
+			return
+
+		currentVal = self.progressBar.value()
+		print(currentVal)
+		print(message)
+		self.progressBar.setValue(currentVal + self.progressIncrement)
+		self.progressBar.setFormat(message)
 		
-		
-		
+
 	def sliderEntranceSlit_Change(self, slider_val):
 		self.lcdNum_EntranceSlider.display(slider_val)
 		
@@ -160,6 +186,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.maxTotalTime = 600 #seconds
 		self.lcdNum_TotalTimeSlider.display((slider_val/100) * self.maxTotalTime)	
 		
+
 	#Button slots/funcs
 	def applysettings(self):
 		"""Slot for ApplySettings_Button
@@ -239,19 +266,31 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		
 		print('Applying Settings and Preparing monochromator for scanning')		
 		self.setscan_thread = SetScan_Thread(self.spectrometer, self.wavelength_steps, self.intTime, self.timeInc, self.totalTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+
+		#If pass all errors then update progress bar and proceed
+		self.busytext_progressbar()
+		self.progressBar.reset()
+		self.progressBar.setFormat('Applying Settings!')
+		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
+
+
 		responseApply = self.setscan_thread.start()
 		self.setscan_thread.finished.connect(self.applythreadFinished)
 		
 		
 	def applythreadFinished(self):
+		"""A slot for the finished signal produced by the end of apply settings thread process
+		"""
 		print('Thread is finished!')
-		#self.progressBar.setFormat('Monochromator ready to scan over range (from {}nm to {}nm)'.format(self.lowerWavelen_nm, self.upperWavelen_nm))
-		#self.progressBar.setValue(100)
-		#self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
-		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread
 		
-		#canvas = Canvas(self.entSize, self.exitSize, self.intTime, width=8, height=4, parent = self)
-		#self.subLayoutA.addWidget(canvas)
+		#update the progress bar to indicate settings are applied
+		self.progressBar.setValue(100)
+		self.progressBar.setFormat('Monochromator ready to scan at position for{}nm wavelength)'.format(self.wavelength_nm))
+
+		self.busyMessageThread.triggerFinish()#trigger the busydots_thread to end and stop appending '...' to end of message.
+		time.sleep(0.5)#wait a little bit before reseting busy thread so that the trigger can fully end the previous run of BusyDots_Thread
+		self.busyMessageThread.triggerFinish(busy = True) #reset thread for next use
+		
 
 		
 	def startscan(self):
@@ -270,9 +309,6 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 	def startlivedata(self):
 		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000, self.subLayoutA)
 		self.realtimedata_thread.start(priority = QThread.HighPriority)
-
-		#self.realplot_thread = RealTimePlot_Thread(self.subLayoutA, self.timeInc)
-		#self.realplot_thread.start(priority = QThread.HighestPriority)
 
 		self.anim = plotbuilder.AnimatedPlot(self.timeInc/1000)
 		self.anim.runAnimate()
@@ -597,16 +633,34 @@ class GetRealTimeData_Thread(QThread):
 	
 	def run(self):
 		self.getRealTimeData()
+	
+class BusyDots_Thread(QThread):
+	"""	A thread object that essentially creates repeating '.' '..' '...' to indicate to use that a process occuring in the text of the
+		progress bar passed as the BusyDots_Thread object parameter. 
+	"""
+	
+	actionSignal = pyqtSignal()
+	def __init__(self,progressBar = None, parent = None):
+		super(BusyDots_Thread, self).__init__(parent)
+		self.progressBar = progressBar
+		self.busy = True
+		
+	def triggerFinish(self, busy = False):
+		"""call with busy = False to trigger run to return
+		"""
+		self.busy = busy
 
-class Plot_Thread(QThread):
-	def __init__(self, parent = None):
-		super(Plot_Thread, self).__init__(parent)
-		self.anim = plotbuilder.AnimatedPlot()
 	
 	def run(self):
-		self.anim.runAnimate()
-	
- 
+		while self.busy:		
+			barMessage = self.progressBar.text()
+			if barMessage[-3:] != '...':
+				self.progressBar.setFormat("{}.".format(barMessage))			
+			else:
+				self.progressBar.setFormat(barMessage[:-3])
+			time.sleep(0.5)
+			self.actionSignal.emit()
+		return			
 		
 					
 def main():
