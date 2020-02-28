@@ -16,7 +16,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class Spectrometer(QObject):
 	progressSignal = pyqtSignal(str, str)
-	dataSignal = pyqtSignal(int)
+	positionsSignal = pyqtSignal(int, str)
 
 	#Set up serial port connection.
 	#Parameters: USB port name in a string format.
@@ -31,8 +31,8 @@ class Spectrometer(QObject):
 	def getProgressSignal(self):
 		return self.progressSignal
 
-	def getDataSignal(self):
-		return self.dataSignal
+	def getPositionsSignal(self):
+		return self.positionsSignal
 
 	def getSerial(self):
 		return self.s
@@ -822,6 +822,10 @@ class Spectrometer(QObject):
 			self.s.write(b'r')
 			r = self.s.readline()
 			r = r.decode('utf-8') 
+			time.sleep(0.001)
+			lastDataPos = self.getLastDataPos()
+			self.positionsSignal.emit(lastDataPos, 'wavelength scan progress')
+			time.sleep(0.001)
  
  
 		print("Scan complete!")
@@ -888,7 +892,7 @@ class Spectrometer(QObject):
 		#confirmation = output[0]
 		try:
 			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be changed if using cycle scanning and if cycle # > 9
-			print('position of last data point:', lastDataPos)
+			#print('position of last data point:', lastDataPos)
 			return(lastDataPos)
 		except ValueError:
 			print('Bad output for last position of data point. lastDataPos will be returned as None.')
@@ -1033,20 +1037,24 @@ class Spectrometer(QObject):
 
 		for i in range(1, length):
 			print(i)
-			i = str(i)
-			i = str.encode(i)
-			self.dataSignal.emit(i)
-			self.s.write(b'u' + i + b'\r')
+			dataPos = str(i)
+			dataPos = str.encode(dataPos)
+			self.s.write(b'u' + dataPos + b'\r')
+			self.progressSignal.emit(str(i), 'wavelength scan data collection')
+
 			output = self.s.read_until(b'\r',15)
+			
+
+			print('DEBUG: data direct output: ', output)
 			output = output.decode('utf-8')
 
 			try:
 				if output[0]!='o':
-					print("Bad confirmation for getting data point " + i.decode('utf-8') + "! Response: " + output)
+					print("Bad confirmation for getting data point " + dataPos.decode('utf-8') + "! Response: " + output)
 					#file1.close()
 					return
 			except IndexError:
-				print("Bad confirmation for getting data point " + i.decode('utf-8') + "! Response: " + output)
+				print("Bad confirmation for getting data point " + dataPos.decode('utf-8') + "! Response: " + output)
 				#file1.close()
 				return
 			
@@ -1059,7 +1067,7 @@ class Spectrometer(QObject):
 
 			#file1.write(i.decode('utf-8') + ',' + str(intensity) + '\n')
 
-			xs.append(float(i.decode('utf-8')))
+			xs.append(float(dataPos.decode('utf-8')))
 
 	
 		xs = np.array(xs)

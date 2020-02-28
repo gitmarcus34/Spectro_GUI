@@ -137,12 +137,20 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
 
 		###Signals
-		self.dataSignal = self.spectrometer.getDataSignal()
-		self.dataSignal.connect(self.checkBuffer)
+		self.positionsSignal = self.spectrometer.getPositionsSignal()
+		self.positionsSignal.connect(self.updateProgressBar)
+
+
 		self.spectroSerial = self.spectrometer.getSerial()
+		
+		###flags
+		self.scanEnded = False
 
 
 	def checkBuffer(self, i):
+		"""Not a necessary slot but can be used to check what the input and output byte size are in the buffer serial port buffers. Just connet to a signal
+		emitted in spectrometer.py whenever writing or reading from the serial port
+		"""
 		receiveBytes = self.spectroSerial.in_waiting
 		outputBytes = self.spectroSerial.out_waiting
 		print('For Write number {}: Input buffer has: {} bytes; Output buffer has {} bytes.'.format(i, receiveBytes, outputBytes))
@@ -154,16 +162,24 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		"""
 		self.busyMessageThread.start()
 
-	def updateProgressBar(self, message, scan):
-		if scan == 'time base scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to time base scanning menu
+	def updateProgressBar(self, message, signature):
+		if signature == 'time base scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to time base scanning menu
 			return
 
-		currentVal = self.progressBar.value()
-		print(currentVal)
-		print(message)
-		self.progressBar.setValue(currentVal + self.progressIncrement)
-		self.progressBar.setFormat(message)
-				
+		elif signature == 'wavelength scan':
+			currentVal = self.progressBar.value()
+			self.progressBar.setValue(currentVal + self.progressIncrement)
+			self.progressBar.setFormat(message)
+
+		elif signature == 'wavelength scan progress':
+			totalData = round((self.upperWavelen_nm - self.lowerWavelen_nm)/self.stepSize_nm)
+			self.progressBar.setValue((message/totalData)*100)
+			self.progressBar.setFormat('Acquired data point: {} out of {}'.format(message, totalData))
+
+		elif signature == 'wavelength scan data collection':
+			totalData = round((self.upperWavelen_nm - self.lowerWavelen_nm)/self.stepSize_nm)
+			self.progressBar.setValue((int(message)/totalData)*100)
+			self.progressBar.setFormat('Collected data point: {} out of {}'.format(message, totalData))			
 	
 	###Update relevant widgets when as slider is changed by user
 	def sliderEntranceSlit_Change(self, slider_val):
@@ -295,17 +311,26 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		"""Start a wavelength scan which is threaded so that the GUI does not freeze up during scan.
 		"""
 		print('Starting Scan!')
+		self.progressBar.reset()
+		self.progressBar.setFormat('Starting Scan!')
+		time.sleep(0.5)
 		#Thread the start scan so that the user can have control over GUI during scan in progress
 		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps, self.endSignal)
+		self.dataSignal = self.startScan_thread.getDataSignal()
 		self.startScan_thread.start()
+		self.dataSignal.connect(self.plotdata)
 		self.startScan_thread.finished.connect(self.startThreadFinished)
-		
-	
+
 	def startThreadFinished(self):
-		print('scan complete!')
-		
+		print('scan thread complete!')
+		if self.scanEnded:
+			self.progressBar.setFormat('Scan Ended! - Ready to scan again or to apply new settings!')
+		else:
+			self.progressBar.setFormat('Scan Complete! - Ready to scan again or to apply new settings!')
 		#Get the data
-		self.steps,self.intensities = self.spectrometer.getDataScan()
+
+	def plotdata(self, steps, intensities):
+		self.steps,self.intensities = steps, intensities
 		print('should print steps and intensities:', self.steps, self.intensities)
 		
 		#Convert steps to nm
@@ -356,8 +381,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 				
 				else: #Add canvas to subwindow if subwindow is checked and no canvas exists in it yet
 					self.actions_figures[action] = [canvas]
-				self.subPlotOptions[action].addWidget(canvas)
-		
+				self.subPlotOptions[action].addWidget(canvas)		
 
 
 	#Exporting functionality
@@ -405,7 +429,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		
 	def endscan(self):
+		self.scanEnded = True
 		print('Ending Scan!')
+		self.progressBar.setFormat('Ending Scan!')
+		time.sleep(0.75)
 		#Used to stop the current time base scan
 		endFlag = True
 		totalTime = 0
@@ -744,7 +771,7 @@ class StartScan_Thread(QThread):
 	"""Handles spectrometer.startScan() so that GUI does not lock while while program waits for a response from the
 		spectrometer indicating success/failure or completion of scan. 
 	"""
-	actionSignal = pyqtSignal()
+	dataSignal = pyqtSignal(np.ndarray, np.ndarray)
 	def __init__(self,spectrometer, lowerWave_steps, upperWave_steps, grating, stepIncrement_steps, endSignal, parent = None):
 		super(StartScan_Thread, self).__init__(parent)
 		self.spectrometer = spectrometer
@@ -755,7 +782,9 @@ class StartScan_Thread(QThread):
 		self.endSignal = endSignal
 	
 	def endScan(self):
-		return
+		return 
+	def getDataSignal(self):
+		return self.dataSignal
 
 	
 	def run(self):
@@ -771,8 +800,11 @@ class StartScan_Thread(QThread):
 			#steps, intensities = self.spectrometer.getScanData()
 		else:
 			print('bad response from spectrometer')
-		
-		return
+			return
+
+		self.steps,self.intensities = self.spectrometer.getDataScan()	
+		self.dataSignal.emit(self.steps,self.intensities)	
+		return 
 			
 		
 def main():
