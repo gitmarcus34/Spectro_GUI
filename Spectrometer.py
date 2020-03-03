@@ -899,14 +899,11 @@ class Spectrometer(QObject):
 		#cycleNumber = output[len(output)-2:]
 
 
-		
-
-
 
 	 #Prepare the spectrometer for a scan. CAUTION: input values have not been secured. So a bad input can cause an error! Assumes use of front entrance slit and side exit slit
 	#Parameters: NA. All parameters set by user input at command line when prompted
 	#Returns: 0 if all went well, 1 if failure. Prints that parameters were set properly.
-	def setScanGUI(self,startPos,endPos,steps,intTime,entSlit,extSlit,gain1,grating,mirror,scan_Type = '0', gratingPos = '300', timeInc = '1', totalTime = '1'):
+	def setScanGUI(self,startPos,endPos,steps,intTime,entSlit,extSlit,gain1,grating,mirror,scan_Type = '0', gratingPos = '300', timeInc = '1', totalTime = '1', totalCycles = 1, dataMode = 0):
 		#type1 = str.encode(input("Enter the type of scan to be completed:\n0 - Monochromator 1 scan.\n1 - Monochromator 2 scan\n3 - Time Base Scan\n"))
 		#startPos = str.encode(input("Enter the starting position for scan in steps (0-208701): "))
 		#endPos = str.encode(input("Enter the ending position for scan in steps (0-208701): "))
@@ -948,14 +945,17 @@ class Spectrometer(QObject):
 		gratingPos = str.encode(gratingPos)
 		timeInc = str.encode(timeInc)
 		totalTime = str.encode(totalTime)
+		totalCycles = str.encode(totalCycles)
+		dataMode = str.encode(dataMode)
 
 		#Send to spectrometer
 		if scan_Type == '0': #Mono 1 scan (scan over range)
 			#Send to spectrometer
-			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + str.encode('1') + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b'\r')
+			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + totalCycles + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b'\r')
+
 		elif scan_Type == '3':#Time Base Scan
 			#Send to spectrometer
-			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + str.encode('1') + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + gratingPos + b',' + struct.pack('!B',0) + b',' + timeInc + b',' + totalTime + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b'\r')
+			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + str.encode('1') + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + gratingPos + b',' + struct.pack('!B',0) + b',' + timeInc + b',' + totalTime + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + dataMode + b'\r')
 		
 		#An attempt to make the write command more readable
 		#self.s.write(b'p{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{} \r'.format(str.encode('0'), startPos, endPos, steps, str.encode('1'), str.encode('1'), str.encode('1'), str.encode('1'), struct.pack('!B',0), str.encode('0'), struct.pack('!B',0), str.encode('0'), str.encode('0'), str.encode('0'), gain1, str.encode('0'), str.encode('0'), str.encode('0'), str.encode('0'))

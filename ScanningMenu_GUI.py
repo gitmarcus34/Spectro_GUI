@@ -64,9 +64,12 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		self.menuGrating.triggered[QAction].connect(self.menuBar_action)
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
+
+		self.menuDataMode.triggered[QAction].connect(self.menuBar_action)
+		self.dataModeOptions = {self.actionStack: 'Stack', self.actionSum: 'Sum'}
 		
 		#subwindow control options (map subwindow actions to the layouts of each subwindow so that actions can be used to trigger changes to widgets in subwindow layout)
-		self.menu_SubwindowPlots.triggered[QAction].connect(self.menuBar_action)
+		self.menuSubwindowPlots.triggered[QAction].connect(self.menuBar_action)
 		self.subPlotOptions = {self.actionTiled: 'tiled', self.actionCascade: 'cascade', self.actionPlotA: self.subLayoutA, self.actionPlotB: self.subLayoutB, self.actionPlotC: self.subLayoutC, self.actionPlotD: self.subLayoutD}
 		
 		###sliders 
@@ -145,6 +148,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		###flags
 		self.scanEnded = False
+		self.dataMode = 0 #if data mode = 0 then data mode is set to STACK. If data mode = 1 then data mode is set to SUM.
 
 
 	def checkBuffer(self, i):
@@ -212,6 +216,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.stepSize_nm = self.incremented_val
 		self.lowerWavelen_nm = self.lowerWavelength_input.text()
 		self.upperWavelen_nm = self.upperWavelength_input.text()
+		self.totalCycles = self.dataMode_spinBox.Value()
 		
 		print('Detector:', self.detector, '; Gain:', self.gain, '; Grating:', self.grating)
 		print('Entrance Width:', self.entSize)
@@ -288,7 +293,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#self.progressBar.setValue(60)
 		
 		#Call threaded settings application (thread allows settings application to happen in the background without affecting the users control of the GUI)
-		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector)
+		self.setscan_thread = SetScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.stepIncrement_steps, self.intTime, self.entSize, self.exitSize, self.gain, self.grating, self.detector, self.totalCycles, self.dataMode)
 		self.setscan_thread.start()
 		self.setscan_thread.finished.connect(self.applythreadFinished)
 	
@@ -556,8 +561,21 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			for act in self.subPlotOptions:
 				if act.isChecked() and (action != self.actionTiled and action != self.actionCascade):
 					act.setChecked(False)
-			action.setChecked(True)				
-			
+			action.setChecked(True)
+
+		elif action in self.subPlotOptions:
+			if action == self.actionStack:
+				self.dataMode = 0
+				self.dataMode_Label.setText('Data Mode: Stack')
+			elif action == self.actionSum:
+				self.dataMode = 1
+				self.dataMode_Label.setText('Data Mode: Sum')
+
+			#make sure only one mode has a check mark next to it.
+			for act in self.dataModeOptions:
+				if act.isChecked():
+					act.setChecked(False)
+			action.setChecked(True)
 			
 			
 	def convert_NMtoSTEPS(self, grating, nm_val = 0, getFactor = False):
@@ -679,7 +697,8 @@ class Error_Message(QMessageBox):
 		app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
 		form = ErrorMessage()				 # We set the form to be our ExampleApp (StartUpMenu)
 		form.show()						 # Show the form
-		app.exec_()	
+		app.exec_()
+
 
 class BusyDots_Thread(QThread):
 	"""	A thread object that essentially creates repeating '.' '..' '...' to indicate to use that a process occuring in the text of the
@@ -713,7 +732,7 @@ class SetScan_Thread(QThread):
 	"""Set scan thread which handles spectrometer.setScanGUI(params) in a background thread so that GUI can function during this process.
 	"""
 	actionSignal = pyqtSignal()
-	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, parent = None):
+	def __init__(self, spectrometer, lowerWave_steps, upperWave_steps, stepIncrement_steps, intTime, entSize, exitSize, gain, grating, detector, totalCycles, dataMode, parent = None):
 		super(SetScan_Thread, self).__init__(parent)
 		
 		self.spectrometer = spectrometer
@@ -726,6 +745,8 @@ class SetScan_Thread(QThread):
 		self.gain = gain
 		self.grating = grating
 		self.detector = detector
+		self.totalCycles = totalCycles
+		self.dataMode = dataMode
 		
 	
 	def run(self):
@@ -760,7 +781,7 @@ class SetScan_Thread(QThread):
 			grating = 'ir'
 
 
-		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector)
+		response = self.spectrometer.setScanGUI(str(self.lowerWave_steps),str(self.upperWave_steps),str(self.stepIncrement_steps),str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector, totalCycles = self.totalCycles, dataMode = self.dataMode)
 
 		print("Apply Settings Response: ", response)
 		if response == 0:
