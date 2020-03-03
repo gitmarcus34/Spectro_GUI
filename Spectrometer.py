@@ -1035,6 +1035,7 @@ class Spectrometer(QObject):
 		xs = list()
 		ys = list()
 
+
 		for i in range(1, length):
 			print(i)
 			dataPos = str(i)

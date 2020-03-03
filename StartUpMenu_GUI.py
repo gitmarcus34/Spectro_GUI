@@ -72,7 +72,7 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		
 		####initialize the spectrometer when intialize button is pressed.
 		print('spectrometer is initializing')
-		self.spectrometer.on()
+		self.spectrometer.on(fromStartUpMenu = True)
 
 
 		self.progressSignal.emit('Setting monochromator motor speed', 'start up')
