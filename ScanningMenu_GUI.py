@@ -143,8 +143,6 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.positionsSignal = self.spectrometer.getPositionsSignal()
 		self.positionsSignal.connect(self.updateProgressBar)#Triggered when spectrometer acquires data during a scan (see spectrometer.startScan()) 
 		
-		self.dataSignal = self.startScan_thread.getDataSignal()
-		self.dataSignal.connect(self.plotdata) #Triggered when data is fully collected from spectrometer controller after scan.
 		
 		###flags
 		self.scanEnded = False
@@ -354,6 +352,8 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#Thread the start scan so that the user can have control over GUI during scan in progress
 		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps, self.endSignal)
 		self.startScan_thread.start()
+		self.dataSignal = self.startScan_thread.getDataSignal()
+		self.dataSignal.connect(self.plotdata) #Triggered when data is fully collected from spectrometer controller after scan.
 		self.startScan_thread.finished.connect(self.startThreadFinished)
 
 	def startThreadFinished(self):
@@ -518,11 +518,11 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	
 
 	def menuBar_action(self, action):
-		"""#This slot function handles all the action signals of the menu bar.  Essentially Checks which dictionary mapping a recently triggered action signal
+		"""#This slot/function handles all the action signals of the menu bar.  Essentially Checks which dictionary mapping a recently triggered action signal
 			belongs to and then makes corresponding changes of each action taking advantage of the dictionary mappings to make some of these changes.
 			For example, if user wants to change the gain setting of the detector from AUTO to 1X then they click 1X which triggers an action called action 1X
 			to connect to menuBar_action slot here where self.gain = self.gainOptions[action1X] = '1X'. Then self.gain is usuable for other operations or passings.
-			After user clicks 1X a check mark will move from beside AUTO to beside 1X - this action is also handled here.
+			After user clicks 1X a check mark will move from beside AUTO to beside 1X.
 		"""
 		print("menu bar action triggered")
 		if action == self.actionMainMenu:
@@ -647,7 +647,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 			
 	def convert_NMtoSTEPS(self, grating, nm_val = 0, getFactor = False):
 		"""Converts a nm_val (which may be a desired nanometer value of wavelength or step size for example) to the grating motor step position knowing that the 
-		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step resolution descreibed 
+		HR460 spectrometer - if initialized after powerup - has a base grating calibration setting for 1200 l/mm grating with 160 steps/nm factor (or .00625 nm/step resolution described 
 		in user manual PDF page 41).  
 		
 		The step position is calculated by dividing the nm_val by the new grating's step factor which is found using the formula described in the handbook (equation (3)).

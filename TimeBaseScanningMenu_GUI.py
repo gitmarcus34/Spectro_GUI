@@ -160,6 +160,8 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.busyMessageThread.start()
 
 	def updateProgressBar(self, message, scan):
+		"""Slot to manage signals that update the progress bar in some way (functionality is similar to ScanningMenu.updateProgressBar())
+		"""
 		if scan == 'wavelength scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to wavelength scanning menu
 			return
 
@@ -307,6 +309,10 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 
 
 	def startlivedata(self):
+		"""slot connected to startRealData button.  Starts a real time data thread that gets data from the spectrometer controller
+		   while a time base scan is running.  Also starts an animation of the data which will produce a window outside the GUI.
+		   
+		"""
 		self.realtimedata_thread = GetRealTimeData_Thread(self.spectrometer, self.timeInc/1000, self.subLayoutA)
 		self.realtimedata_thread.start(priority = QThread.HighPriority)
 
@@ -315,7 +321,7 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 
 		
 	def endscan(self):
-		"""Slot for endScan_Button
+		"""Slot for endScan_Button.  Tries to end the scan whenever the serial port is not busy.
 		"""
 		print('Ending Scan!')
 		#Used to stop the current time base scan
@@ -337,8 +343,13 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 
 
 	def menuBar_action(self, action):
-		"""#if main menu button is clicked then a subwindow is opened in mdiArea (mdi in coreWindow)
+		"""#This slot/function handles all the action signals of the menu bar.  Checks which dictionary mapping a recently triggered action signal
+			belongs to and then makes corresponding changes of each action taking advantage of the dictionary mappings to make some of these changes.
+			For example, if user wants to change the gain setting of the detector from AUTO to 1X then they click 1X which triggers an action called action 1X
+			to connect to menuBar_action slot here where self.gain = self.gainOptions[action1X] = '1X'. Then self.gain is usuable for other operations or passings.
+			After user clicks 1X a check mark will move from beside AUTO to beside 1X.
 		"""
+
 		print("menu bar action triggered")
 		if action == self.actionMainMenu:
 			#Check if subwindow already exists, show it and its widgets in case user had exited out.

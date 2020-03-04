@@ -37,7 +37,7 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		###Progress Bar
 		self.progressSignal = self.spectrometer.getProgressSignal()
 		self.progressSignal.connect(self.updateProgressBar)
-		self.progressIncrement = 100/10
+		self.progressIncrement = 100/12
 
 	def updateProgressBar(self, message, startUp):
 		if startUp != 'start up':
