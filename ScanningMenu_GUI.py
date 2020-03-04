@@ -54,9 +54,9 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.menuMain.triggered[QAction].connect(self.menuBar_action)
 		self.menuScan.triggered[QAction].connect(self.menuBar_action)
 		
-		#scan parameters menus and dictionay mappins of menubar a
+		#scan parameter menus with corresponding dictionay mappings of menubar action objects to name (see menuBar_action slot/function)
 		self.detector, self.gain, self.grating = ('Side', 'AUTO', '1800 l/mm (Vis)') #defaultParams
-		self.menuDetector.triggered[QAction].connect(self.menuBar_action)
+		self.menuDetector.triggered[QAction].connect(self.menuBar_action)#user triggered signal that sends the corresponding action object to the menuBar_action slot
 		self.detectorOptions = {self.actionSide: 'Side', self.actionFront: 'Front'}
 		
 		self.menuGain.triggered[QAction].connect(self.menuBar_action)
@@ -139,12 +139,12 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
 
-		###Signals
+		###Various PyQt Signals
 		self.positionsSignal = self.spectrometer.getPositionsSignal()
-		self.positionsSignal.connect(self.updateProgressBar)
-
-
-		self.spectroSerial = self.spectrometer.getSerial()
+		self.positionsSignal.connect(self.updateProgressBar)#Triggered when spectrometer acquires data during a scan (see spectrometer.startScan()) 
+		
+		self.dataSignal = self.startScan_thread.getDataSignal()
+		self.dataSignal.connect(self.plotdata) #Triggered when data is fully collected from spectrometer controller after scan.
 		
 		###flags
 		self.scanEnded = False
@@ -152,9 +152,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 
 	def checkBuffer(self, i):
-		"""Not a necessary slot but can be used to check what the input and output byte size are in the buffer serial port buffers. Just connet to a signal
+		"""Not a necessary slot but can be used to check/debug what the input and output byte size are in the buffer serial port buffers. Just connect to a signal
 		emitted in spectrometer.py whenever writing or reading from the serial port
 		"""
+		self.spectroSerial = self.spectrometer.getSerial()
 		receiveBytes = self.spectroSerial.in_waiting
 		outputBytes = self.spectroSerial.out_waiting
 		print('For Write number {}: Input buffer has: {} bytes; Output buffer has {} bytes.'.format(i, receiveBytes, outputBytes))
@@ -167,9 +168,26 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.busyMessageThread.start()
 
 	def updateProgressBar(self, message, signature):
+		"""This slot/function takes a message which could be any object that a particular pyqt signal carries 
+			for updating the progress bar during a process.  The signal also carries a signature which should
+			be any identifier for the purpose of the signal - this is to prevent the signal from triggering other
+			actions it is connected to.
+			
+			For example, message is an integer such as the position of the last acquired data point memory position during a 
+			scan. This message is connected to this updateProgressBar() slot via positionsSignal(int:message, str:signature), 
+			and we tell the progress bar to update to the integer pecentage of lastDataPoint_Position/totalNumberofPositions.
+			The signal progressSignal() has a signature which is 'wavelength scan progress' when positionsSignal() is triggered
+			in spectrometer.py to send the last data position in memory during a wavelength scan in progress.
+			
+			!!!NOTE: The signature, for example, of progressScan() is 'wavelength scan' when the settings of of a wavelength scan are being applied.
+			This is vital because we must specify when to use code specified for the 'wavelength scan' signature otherwise anytime progressSignal()
+			is triggered the code would also be acivated - Therefore, since timeBaseScannning menu uses progressSignal() similarly when applying settings
+			then actions made in the timeBaseScanning menu would effect the progress bar in the wavelength scanning menu which can be problematic. 
+		"""
 		if signature == 'time base scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to time base scanning menu
 			return
-
+		
+		#update the progress bar when settings are being applied for the wavelength scan
 		elif signature == 'wavelength scan':
 			currentVal = self.progressBar.value()
 			self.progressBar.setValue(currentVal + self.progressIncrement)
@@ -208,10 +226,16 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def applysettings(self):
 		"""	Apply the current settings inputed by user on scanning menu.  Apply settings is threaded so that GUI does not lock up during scan.
 			The user should press start scan after the progress bar has been set to full.  It is advised that user does not press start scan
-			during this time period.
+			during this time period - if not already built in the StartScan button should be disabled while settings are being applied.
+			
+			!!!NOTE: The user does not need to press apply settings after a scan if they do not want to change the settings of a previous scan.
+			However if the user changes any parameters for a new scan they must apply the new settings - Therefore the start scan button should 
+			not be disabled after settings have been successfuly applied at least once.
 		"""
 		#print('applysettings slot received signal')
-		#self.busytext_progressbar()		
+		#self.busytext_progressbar()	
+
+		#Get the parameters set by user when Apply Settings button is pressed.
 		self.intTime = self.IntegrationTimeSlider.value()
 		self.entSize = self.EntranceSlitSlider.value()
 		self.exitSize = self.ExitSlitSlider.value()
@@ -301,7 +325,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.setscan_thread.finished.connect(self.applythreadFinished)
 	
 	def applythreadFinished(self):
-		"""A slot for the finished signal produced by the end of apply settings thread process
+		"""A slot for the finished signal produced by the end of apply settings thread process.
+		   This slot carries out actions that should follow after settings have been applied
+		   such as setting the progress bar to 100%, setting a relevant message on the progress
+		   bar, and triggering the busyDotsThread to finish.
 		"""
 		print('Thread is finished!')
 		
@@ -318,26 +345,40 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 	def startscan(self):
 		"""Start a wavelength scan which is threaded so that the GUI does not freeze up during scan.
 		"""
+		#prompts
 		print('Starting Scan!')
-		self.progressBar.reset()
-		self.progressBar.setFormat('Starting Scan!')
-		time.sleep(0.5)
+		self.progressBar.reset()#reset the progress bar before the scan starts
+		self.progressBar.setFormat('Starting Scan!')#notify the user that the scan is starting
+		time.sleep(0.5)#take some small time time to display the message to user
+		
 		#Thread the start scan so that the user can have control over GUI during scan in progress
 		self.startScan_thread = StartScan_Thread(self.spectrometer, self.lowerWave_steps, self.upperWave_steps, self.grating, self.stepIncrement_steps, self.endSignal)
-		self.dataSignal = self.startScan_thread.getDataSignal()
 		self.startScan_thread.start()
-		self.dataSignal.connect(self.plotdata)
 		self.startScan_thread.finished.connect(self.startThreadFinished)
 
 	def startThreadFinished(self):
+		"""Slot connected connected to startScan_Thread finished() signal.  Updates progress bar after scan.
+		"""
 		print('scan thread complete!')
 		if self.scanEnded:
 			self.progressBar.setFormat('Scan Ended! - Ready to scan again or to apply new settings!')
 		else:
 			self.progressBar.setFormat('Scan Complete! - Ready to scan again or to apply new settings!')
-		#Get the data
 
 	def plotdata(self, steps, intensities):
+		"""(numpyArray, numpyArray)
+		This funtion/slot is used to plot scan data where steps is a list of wavelength positions in nanometers for each intensity in
+		intensities. 
+		
+		!!!NOTE: whichever subplot option is checkmarked in the menu bar subPlotOptions_menu will be plotted onto.  If there is a 
+		pre-existing plot on the subPlot that is checkmarked then the pre-existing plot canvas will be removed and a new one will
+		be added for the plot given by newly collected data from a scan (this is handled using the dictionary mapping actions_figures
+		which maps subPlotOptions_menu actions to lists of canvases).  It is possible however to plot multiple plots on the same
+		figure, but the subWindows for the subplots are small so multiple plots per window is untidy.  I left room for it to be 
+		possible to add multiple plots per canvas (in case ever desired) by making actions_figures dictionary values lists of canvases
+		corresponding to the chosen subPlotOption_menu action.
+		"""
+	
 		self.steps = steps
 		if self.dataMode == 1:
 			self.intensities = intensities/self.totalCycles
@@ -399,17 +440,31 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 	#Exporting functionality
 	def exportPNG(self):
+		"""This slot is connected to the Export PNG button.  Exports the recent most plot on the subPlot
+		   that is check marked in the subPlotOptions_menu as a PNG file.
+		"""
 		fileName = self.saveFileDialog('.PNG')
-		#figure = self.canvas.getFigure()
+
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				figure = self.actions_figures[action][-1].getFigure()
+				figure = self.actions_figures[action][-1].getFigure()#get the latest plot on the canvas
 		figure.savefig(fileName)
 		
 	def exportJPG(self):
-		self.saveFileDialog('.JPG')
+		"""This slot is connected to the Export JPG button.  Exports the recent most plot on the subPlot
+		   that is check marked in the subPlotOptions_menu as a JPG file.
+		"""
+		fileName = self.saveFileDialog('.JPG')
+		
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				figure = self.actions_figures[action][-1].getFigure()#get the latest plot on the canvas
+		figure.savefig(fileName)
 		
 	def exportCSV(self):
+		"""This slot is connected to the Export CSV button.  Exports the recent most data represented on the subPlot
+		   that is check marked in the subPlotOptions_menu as a CSV file.
+		"""
 		fileName = self.saveFileDialog('.CSV')
 		with open(fileName, 'w') as newFile:
 		   newFile.write('Wavelength(nm),Intensities\n')
@@ -442,22 +497,24 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		
 		
 	def endscan(self):
+		"""This slot is connected to the endScan button. This ends a scan that is in progress by calling spectrometer.scanStop() 
+		"""
 		self.scanEnded = True
 		print('Ending Scan!')
 		self.progressBar.setFormat('Ending Scan!')
 		time.sleep(0.75)
 		#Used to stop the current time base scan
 		endFlag = True
-		totalTime = 0
+		#totalTime = 0
 		while endFlag:
-			try:
+			try:#This try and except block is here in case the user tries to send scan stop command when the serial port is busy taking other commands.
 				response_end = self.spectrometer.scanStop()
 				print('Scan Ended')
 				endFlag = False
 				self.endSignal.emit()
 			except serial.serialutil.SerialException:
-				   time.sleep(0.001)
-				   totalTime += 0.001
+				   time.sleep(0.001) #If serial exception is triggered then try stopping the scan 1 millesecond later
+				   #totalTime += 0.001
 	
 
 	def menuBar_action(self, action):
