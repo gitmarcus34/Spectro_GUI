@@ -142,7 +142,7 @@
          <set>Qt::AlignCenter</set>
         </property>
         <property name="format">
-         <string>Busy</string>
+         <string>No settings applied - Not ready to start scan.</string>
         </property>
        </widget>
       </item>
@@ -544,7 +544,10 @@
       <item row="23" column="2">
        <widget class="QLabel" name="dataMode_Label">
         <property name="text">
-         <string>Data Mode: Stack</string>
+         <string>Data Mode: STACK</string>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -621,8 +624,8 @@
    <addaction name="menuDetector"/>
    <addaction name="menuGain"/>
    <addaction name="menuGrating"/>
-   <addaction name="menuSubwindowPlots"/>
    <addaction name="menuDataMode"/>
+   <addaction name="menuSubwindowPlots"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTimeMenu">

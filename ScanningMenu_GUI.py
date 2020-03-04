@@ -66,7 +66,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.gratingOptions = {self.action1800Grating: '1800 l/mm (Vis)', self.action600Grating: '600 l/mm (IR)'}
 
 		self.menuDataMode.triggered[QAction].connect(self.menuBar_action)
-		self.dataModeOptions = {self.actionStack: 'Stack', self.actionSum: 'Sum'}
+		self.dataModeOptions = {self.actionStack: 'STACK', self.actionSum: 'SUM'}
 		
 		#subwindow control options (map subwindow actions to the layouts of each subwindow so that actions can be used to trigger changes to widgets in subwindow layout)
 		self.menuSubwindowPlots.triggered[QAction].connect(self.menuBar_action)
@@ -177,8 +177,10 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 
 		elif signature == 'wavelength scan progress':
 			totalData = round((self.upperWavelen_nm - self.lowerWavelen_nm)/self.stepSize_nm)
-			self.progressBar.setValue((message/totalData)*100)
-			self.progressBar.setFormat('Acquired data point: {} out of {}'.format(message, totalData))
+			lastDataPos = message[0]
+			cycle = message[1]
+			self.progressBar.setValue((message[0]/totalData)*100)
+			self.progressBar.setFormat('Acquired data point: {} out of {} for cycle: {}'.format(lastDataPos, totalData, cycle))
 
 		elif signature == 'wavelength scan data collection':
 			totalData = round((self.upperWavelen_nm - self.lowerWavelen_nm)/self.stepSize_nm)
@@ -216,13 +218,14 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.stepSize_nm = self.incremented_val
 		self.lowerWavelen_nm = self.lowerWavelength_input.text()
 		self.upperWavelen_nm = self.upperWavelength_input.text()
-		self.totalCycles = self.dataMode_spinBox.Value()
+		self.totalCycles = self.dataMode_spinBox.value()
 		
 		print('Detector:', self.detector, '; Gain:', self.gain, '; Grating:', self.grating)
 		print('Entrance Width:', self.entSize)
 		print('Exit width:', self.exitSize)
 		print('Integration time:', self.intTime)
 		print('Step Size:', self.stepSize_nm)
+		print('Number of cycles: {}; Data Mode: {}'.format(self.totalCycles, self.dataMode))
 		
 		###Before doing calculations and applying settings make sure inputs are valid. Display error messages where necessary.
 		
@@ -335,8 +338,13 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#Get the data
 
 	def plotdata(self, steps, intensities):
-		self.steps,self.intensities = steps, intensities
-		print('should print steps and intensities:', self.steps, self.intensities)
+		self.steps = steps
+		if self.dataMode == 1:
+			self.intensities = intensities/self.totalCycles
+			print('summed intensities: {}, divided intensities: {}'.format(intensities, self.intensities))
+		else:
+			self.intensities = intensities
+		#print('should print steps and intensities:', self.steps, self.intensities)
 		
 		#Convert steps to nm
 		for i in range(len(self.steps)):
@@ -372,7 +380,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		#create a canvas for the designated subwindow (designate by choosing the corresponding option in 'subwindow plots' drop down menu)
 		for action in self.subPlotOptions:
 			if action.isChecked():
-				canvas = Canvas(self.scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, width=8, height=4, parent = self)
+				canvas = Canvas(self.scanData, self.entSize, self.exitSize, self.intTime, self.incremented_val, self.gain, width=8, height=4, parent = self)
 				
 				if action in self.actions_figures: #Check if there is a canvas in the actions corresponding subwindow already and remove canvas if true
 
@@ -427,7 +435,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		elif fileType == '.JPG':
 			fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Images (*.JPG)", options=options)
 		if fileName:
-			print(fileName)
+			print('file name: ', fileName)
 			return fileName
 		else:
 			print('Did not specify name type for saveFileDialog function')
@@ -563,13 +571,15 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 					act.setChecked(False)
 			action.setChecked(True)
 
-		elif action in self.subPlotOptions:
+		elif action in self.dataModeOptions:
 			if action == self.actionStack:
 				self.dataMode = 0
-				self.dataMode_Label.setText('Data Mode: Stack')
+				print('data mode set to STACK')
+				self.dataMode_Label.setText('Data Mode: STACK')
 			elif action == self.actionSum:
 				self.dataMode = 1
-				self.dataMode_Label.setText('Data Mode: Sum')
+				print('data mode set to SUM')
+				self.dataMode_Label.setText('Data Mode: SUM')
 
 			#make sure only one mode has a check mark next to it.
 			for act in self.dataModeOptions:
@@ -630,7 +640,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 class Canvas(FigureCanvas):
 	"""Note that FigureCanvas is a matplotlib designed QObject so it can be treated correspondignly - we can add it to sublayors like a widget using sublayor.addWidget(Canvas) 
 	"""
-	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, width = 5, height = 5, dpi = 100, parent = None):
+	def __init__(self, scanData, entSize, exitSize, intTime, stepIncrement, gain, width = 5, height = 5, dpi = 100, parent = None):
 		self.figure = Figure(figsize=(width, height), dpi=dpi)
 		self.axes = self.figure.add_subplot(111)
 
@@ -641,7 +651,7 @@ class Canvas(FigureCanvas):
 		self.stepIncrement = stepIncrement
 		self.intTime = intTime
 		self.steps, self.intensities = scanData
- 
+		self.gain = gain
 		self.plot()
 		
 	
@@ -654,11 +664,11 @@ class Canvas(FigureCanvas):
 		#randNum = random.random()
 		#y = np.array([random.random(), random.random(),random.random()])
 		#x = [1, 2, 3]
-		print('intensities from canvas class: ', self.intensities)
+		#print('intensities from canvas class: ', self.intensities)
 		ax = self.figure.add_subplot(111)
 		ax.plot(self.steps, self.intensities)
 		mu = r'$\mu$'
-		ax.set_title('Intensity vs Wavelength\n EntSlit: {}{}m, ExitSlit: {}{}m, IntTime: {}ms, StepSize: {}nm'.format(self.entSize, mu, self.exitSize, mu, self.intTime, round(self.stepIncrement, 5)))
+		ax.set_title('Intensity vs Wavelength\n EntSlit: {}{}m, ExitSlit: {}{}m, IntTime: {}ms, StepSize: {}nm, gain: {}'.format(self.entSize, mu, self.exitSize, mu, self.intTime, round(self.stepIncrement, 5), self.gain))
 
 		ax.set_xlabel('Wavelength (nm)')
 		ax.set_ylabel('Intensity (counts)')
@@ -745,8 +755,8 @@ class SetScan_Thread(QThread):
 		self.gain = gain
 		self.grating = grating
 		self.detector = detector
-		self.totalCycles = totalCycles
-		self.dataMode = dataMode
+		self.totalCycles = str(totalCycles)
+		self.dataMode = str(dataMode)
 		
 	
 	def run(self):
@@ -801,6 +811,7 @@ class StartScan_Thread(QThread):
 		self.grating = grating
 		self.stepIncrement_steps = stepIncrement_steps
 		self.endSignal = endSignal
+
 	
 	def endScan(self):
 		return 
@@ -822,9 +833,10 @@ class StartScan_Thread(QThread):
 		else:
 			print('bad response from spectrometer')
 			return
-
+	
 		self.steps,self.intensities = self.spectrometer.getDataScan()	
-		self.dataSignal.emit(self.steps,self.intensities)	
+		self.dataSignal.emit(self.steps,self.intensities)
+
 		return 
 			
 		

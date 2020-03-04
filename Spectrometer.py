@@ -16,7 +16,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class Spectrometer(QObject):
 	progressSignal = pyqtSignal(str, str)
-	positionsSignal = pyqtSignal(int, str)
+	positionsSignal = pyqtSignal(tuple, str)
 
 	#Set up serial port connection.
 	#Parameters: USB port name in a string format.
@@ -823,8 +823,12 @@ class Spectrometer(QObject):
 			r = self.s.readline()
 			r = r.decode('utf-8') 
 			time.sleep(0.001)
-			lastDataPos = self.getLastDataPos()
-			self.positionsSignal.emit(lastDataPos, 'wavelength scan progress')
+			try:
+				lastDataPos, cycle = self.getLastDataPos()
+				self.positionsSignal.emit((lastDataPos, cycle), 'wavelength scan progress')
+			except TypeError:
+				print('last data pos tuple is None')
+			
 			time.sleep(0.001)
  
  
@@ -887,13 +891,14 @@ class Spectrometer(QObject):
 		self.s.write(b't')
 		output = self.s.readline()
 		output = output.decode('utf-8')
-		 
+		output = output[1:] #remove the leading 'o'
 		#note that output is string so must extract desired elements like list
 		#confirmation = output[0]
-		try:
-			lastDataPos = int(output[1: len(output)-3]) #(!) Note this will need to be changed if using cycle scanning and if cycle # > 9
-			#print('position of last data point:', lastDataPos)
-			return(lastDataPos)
+		try:	
+			commaIndex = output.index(',')
+			lastDataPos = int(output[:commaIndex]) #(!) Note this will need to be changed if using cycle scanning and if cycle # > 9
+			cycle = int(output[commaIndex+1:])
+			return(lastDataPos, cycle)
 		except ValueError:
 			print('Bad output for last position of data point. lastDataPos will be returned as None.')
 		#cycleNumber = output[len(output)-2:]
@@ -951,7 +956,7 @@ class Spectrometer(QObject):
 		#Send to spectrometer
 		if scan_Type == '0': #Mono 1 scan (scan over range)
 			#Send to spectrometer
-			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + totalCycles + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b'\r')
+			self.s.write(b'p' + scanType + b',' + startPos + b',' + endPos + b',' + steps + b',' + intTime + b',' + totalCycles + b',' + str.encode('1') + b',' + str.encode('1') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + struct.pack('!B',0) + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + gain1 + b',' + str.encode('0') + b',' + str.encode('0') + b',' + str.encode('0') + b',' + dataMode + b'\r')
 
 		elif scan_Type == '3':#Time Base Scan
 			#Send to spectrometer
@@ -1037,7 +1042,7 @@ class Spectrometer(QObject):
 
 
 		for i in range(1, length):
-			print(i)
+			print('Collected data pos: ', i)
 			dataPos = str(i)
 			dataPos = str.encode(dataPos)
 			self.s.write(b'u' + dataPos + b'\r')
@@ -1046,7 +1051,7 @@ class Spectrometer(QObject):
 			output = self.s.read_until(b'\r',15)
 			
 
-			print('DEBUG: data direct output: ', output)
+			#print('DEBUG: data direct output: ', output)
 			output = output.decode('utf-8')
 
 			try:

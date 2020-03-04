@@ -2,18 +2,16 @@
 
 # Form implementation generated from reading ui file 'TimeBaseScanningMenu_Design.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.2
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_TBSMenu(object):
     def setupUi(self, TBSMenu):
         TBSMenu.setObjectName("TBSMenu")
-        TBSMenu.resize(1397, 651)
+        TBSMenu.resize(2039, 932)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -273,7 +271,7 @@ class Ui_TBSMenu(object):
         self.gridLayout_5.addLayout(self.verticalLayout_4, 0, 0, 4, 1)
         TBSMenu.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(TBSMenu)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1397, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 2039, 25))
         self.menubar.setObjectName("menubar")
         self.menuScan = QtWidgets.QMenu(self.menubar)
         self.menuScan.setObjectName("menuScan")
@@ -405,7 +403,7 @@ class Ui_TBSMenu(object):
         self.plot_subwindowB.setWindowTitle(_translate("TBSMenu", "Subwindow"))
         self.plot_subwindowC.setWindowTitle(_translate("TBSMenu", "Subwindow"))
         self.plot_subwindowD.setWindowTitle(_translate("TBSMenu", "Subwindow"))
-        self.progressBar.setFormat(_translate("TBSMenu", "busy"))
+        self.progressBar.setFormat(_translate("TBSMenu", "No settings applied - Not ready to start scan."))
         self.label_4.setText(_translate("TBSMenu", "->\'Time Increment\' is the time between\n"
 "integration starts.\n"
 "\n"
@@ -452,3 +450,4 @@ if __name__ == "__main__":
     ui.setupUi(TBSMenu)
     TBSMenu.show()
     sys.exit(app.exec_())
+

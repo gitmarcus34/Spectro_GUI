@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1397</width>
-    <height>651</height>
+    <width>2039</width>
+    <height>932</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -545,7 +545,7 @@ Data Collection</string>
          <bool>false</bool>
         </property>
         <property name="format">
-         <string>busy</string>
+         <string>No settings applied - Not ready to start scan.</string>
         </property>
        </widget>
       </item>
@@ -596,8 +596,8 @@ the 'Integration Time' value.</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1397</width>
-     <height>26</height>
+     <width>2039</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuScan">
