@@ -37,7 +37,7 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.mainmenu_sub = self.subwindow_dict['mainmenu']
 		self.tbsmenu_sub = self.subwindow_dict['tbsmenu']
 		
-		#scanning plot subwindows
+		#scanning plot subwindows and data mapping
 		self.sub_mdiArea.addSubWindow(self.plot_subwindowD)
 		self.sub_mdiArea.addSubWindow(self.plot_subwindowC)
 		self.sub_mdiArea.addSubWindow(self.plot_subwindowB)
@@ -47,6 +47,15 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.plot_subwindowB.setWindowTitle('Plot Subwindow B')
 		self.plot_subwindowC.setWindowTitle('Plot Subwindow C')
 		self.plot_subwindowD.setWindowTitle('Plot Subwindow D')
+
+		self.intensitiesA, self.intensitiesB, self.intensitiesC, self.intensitiesD = [], [], [], []
+		self.stepsA, self.stepsB, self.stepsC, self.stepsD = [], [], [], []
+
+		self.scanData_map = {
+			self.actionPlotA: (self.stepsA, self.intensitiesA), 
+			self.actionPlotB: (self.stepsB, self.intensitiesB), 
+			self.actionPlotC: (self.stepsC, self.intensitiesC), 
+			self.actionPlotD: (self.stepsD, self.intensitiesD) }
 		
 		#bar menu
 		##window paths
@@ -378,7 +387,16 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		possible to add multiple plots per canvas (in case ever desired) by making actions_figures dictionary values lists of canvases
 		corresponding to the chosen subPlotOption_menu action.
 		"""
-	
+
+		#first store the data into lists associated with the subwindow the data will be plotted within so that it can be exported later.
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				if self.dataMode == 1:
+					self.scanData_map[action][1].extend(intensities/self.totalCycles)
+				else:
+					self.scanData_map[action][1].extend(intensities)
+				self.scanData_map[action][0].extend(steps)
+
 		self.steps = steps
 		if self.dataMode == 1:
 			self.intensities = intensities/self.totalCycles
@@ -466,12 +484,18 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		   that is check marked in the subPlotOptions_menu as a CSV file.
 		"""
 		fileName = self.saveFileDialog('.CSV')
+		
+		for action in self.subPlotOptions:
+			if action.isChecked():
+				steps = self.scanData_map[action][0]
+				intensities = self.scanData_map[action][1]	
+		
 		with open(fileName, 'w') as newFile:
 		   newFile.write('Wavelength(nm),Intensities\n')
-		   for i in range(len(self.steps)):
-			   newFile.write(str(self.steps[i]))
+		   for i in range(len(steps)):
+			   newFile.write(str(steps[i]))
 			   newFile.write(',')
-			   newFile.write(str(self.intensities[i]))
+			   newFile.write(str(intensities[i]))
 			   newFile.write('\n')
 	
 	
