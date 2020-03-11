@@ -45,6 +45,7 @@ class Spectrometer(QObject):
 		output=self.s.readline()
 		output=output.decode('utf-8')
 		print("You are here: " + output)
+		return output
 
 	#Reset the spectrometer. Print restart message
 	#Parameters: NA
@@ -110,7 +111,7 @@ class Spectrometer(QObject):
 				print('Not ready, trying again...')
 
 				if fromStartUpMenu:
-					self.progressSignal.emit('Not Ready, trying again... Close program and restart if this is taking a while', 'start up')
+					self.progressSignal.emit('Not Ready, trying again... \n Close program and restart if this is taking a while', 'start up lag')
 	
 				self.on()
 
@@ -126,7 +127,7 @@ class Spectrometer(QObject):
 
 			while output != '=' and timer>0:
 				if fromStartUpMenu:
-					self.progressSignal.emit('Bad Response for intelligent mode... Close program and restart if taking a while', 'start up')
+					self.progressSignal.emit('Bad Response for intelligent mode... \n Close program and restart if taking a while', 'start up lag')
 
 				print("Bad response for intelligent mode: " + output + ". Restarting...")
 				self.s.write(struct.pack('!B',247))

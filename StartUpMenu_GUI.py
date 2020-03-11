@@ -4,6 +4,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+import serial
+
 import StartUpMenu_Design # This file holds our MainWindow and all StartUpMenu related things
 			  # it also keeps events etc that we defined in Qt Designer
 #import MainMenu_GUI
@@ -19,6 +21,8 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		#subwindows
 		print(self.subwindow_dict)
 		self.mainmenu_sub = self.subwindow_dict['mainmenu']
+
+		self.specSerial = self.spectrometer.getSerial()
 
 
 		"""###define subwindows for CoreWindow that span from widgetActions in this menu.
@@ -38,13 +42,24 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		self.progressSignal = self.spectrometer.getProgressSignal()
 		self.progressSignal.connect(self.updateProgressBar)
 		self.progressIncrement = 100/12
+		
+		#check if the spectrometer is initialized by checking if we are communicating with the MAIN program instead of the BOOT program
+		if self.spectrometer.whereAmI() != 'F':
+			self.MainMenu_Button.setEnabled(False)
+		else:
+			self.MainMenu_Button.setEnabled(True)
+			self.progressBar.setFormat('Monochromator is already initialized! \n Press "Initialize" to reinitialize or press "Main Menu" to continue.')
+			self.progressBar.setValue(100)
 
 	def updateProgressBar(self, message, startUp):
-		if startUp != 'start up':
+		if startUp != 'start up' and startUp != 'start up lag':
 			return
+
 		self.progressBar.setFormat(message)
 		currentVal = self.progressBar.value()
-		self.progressBar.setValue(currentVal+self.progressIncrement)
+
+		if startUp == 'start up':
+			self.progressBar.setValue(currentVal+self.progressIncrement)
 
 	
 	def mainmenu_path(self, action):
@@ -90,14 +105,19 @@ class StartMenu(QtWidgets.QMainWindow, StartUpMenu_Design.Ui_StartUp_Menu):
 		self.progressSignal.emit('Setting front (lateral) exit slit motor speed', 'start up')
 		self.spectrometer.setSlitSpeed('3')
 
+		#self.specSerial.timeout = 1 #timeout should be large for initialization
+
 		self.progressSignal.emit('Initializing: autocalibrating monochromator to base grating (1200 l/mm)', 'start up')
 		self.spectrometer.initialize()
+
+		self.specSerial.timeout = 0.3
 
 		self.progressSignal.emit('Spectrometer is Initialized and ready for scanning!', 'start up')
 		print('spectrometer is initialized')
 		self.progressBar.setValue(100)
-		
-		
+
+		if self.spectrometer.whereAmI() == 'F':
+			self.MainMenu_Button.setEnabled(True)
 
 		
 def main():

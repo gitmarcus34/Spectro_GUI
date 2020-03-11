@@ -388,15 +388,6 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		corresponding to the chosen subPlotOption_menu action.
 		"""
 
-		#first store the data into lists associated with the subwindow the data will be plotted within so that it can be exported later.
-		for action in self.subPlotOptions:
-			if action.isChecked():
-				if self.dataMode == 1:
-					self.scanData_map[action][1].extend(intensities/self.totalCycles)
-				else:
-					self.scanData_map[action][1].extend(intensities)
-				self.scanData_map[action][0].extend(steps)
-
 		self.steps = steps
 		if self.dataMode == 1:
 			self.intensities = intensities/self.totalCycles
@@ -431,8 +422,22 @@ class ScanningMenu(QtWidgets.QMainWindow, ScanningMenu_Design.Ui_ScanningMenu):
 		self.steps = self.steps.astype('float64')
 		self.intensities = self.intensities.astype('float64')
 		
-		#store steps and intensities to scanData tuple to pass into following plot canvas definition 
+		#Place steps and intensities in scanData tuple to pass into following plot canvas definition 
 		self.scanData = (self.steps, self.intensities)
+
+		#Store the data into lists associated with the subwindow the data will be plotted within so that it can be exported later.
+		for action in self.subPlotOptions:
+			if action.isChecked():
+
+				#Clear out any previous data in the subwindow plot so that exportCSV() exports only new data
+				self.scanData_map[action][0].clear()
+				self.scanData_map[action][1].clear()
+				
+				#store new data
+				self.scanData_map[action][0].extend(self.steps)
+				self.scanData_map[action][1].extend(self.intensities)
+
+
 		
 		
 		###Canvas to Subwindow managment

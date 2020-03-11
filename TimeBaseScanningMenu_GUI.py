@@ -114,6 +114,11 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.StartScan_Button.clicked.connect(self.startscan)
 		self.StartRealData_Button.clicked.connect(self.startlivedata)
 		self.EndScan_Button.clicked.connect(self.endscan)
+
+		if self.spectrometer.getMotorPos() == self.wavelength_input.text():
+			self.MoveMotor_Button.setEnabled(False)
+		self.MoveMotor_Button.clicked.connect(self.movemotor)
+		self.wavelength_input.editingFinished()
 		
 		#initialize button
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
@@ -187,6 +192,16 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 	def sliderTotalTime_Change(self, slider_val):
 		self.maxTotalTime = 600 #seconds
 		self.lcdNum_TotalTimeSlider.display((slider_val/100) * self.maxTotalTime)	
+
+	def enablemove(self, value):
+		self.MoveMotor_Button.setEnabled(True)
+
+	def movemotor(self):
+		wavelength_steps = self.convert_NMtoSTEPS(self.grating, self.wavelength_input.text())
+		self.spectrometer.setMotorPos(wavelength_steps)
+
+		if self.spectrometer.getMotorPos() == self.wavelength_input.text():
+			self.MoveMotor_Button.setEnabled(False)
 		
 
 	#Button slots/funcs
@@ -567,7 +582,7 @@ class SetScan_Thread(QThread):
 		if self.grating=='600 l/mm (IR)':
 			grating = 'ir'
 		
-		response = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector,'3',str(self.wavelength_steps),str(self.timeInc),str(self.totalTime))
+		response = self.spectrometer.setScanGUI('0','0','0',str(self.intTime),str(int(self.entSize/12.5)),str(int(self.exitSize/12.5)),str(gain),grating,detector,'3',str(self.wavelength_steps),str(self.timeInc),str(self.totalTime), totalCycles = str(1), dataMode = str(0))
 		print("Apply Settings Response: ", response)
 
 		if response == 0:
