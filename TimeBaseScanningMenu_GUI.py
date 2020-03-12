@@ -115,10 +115,8 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.StartRealData_Button.clicked.connect(self.startlivedata)
 		self.EndScan_Button.clicked.connect(self.endscan)
 
-		if self.spectrometer.getMotorPos() == self.wavelength_input.text():
-			self.MoveMotor_Button.setEnabled(False)
 		self.MoveMotor_Button.clicked.connect(self.movemotor)
-		self.wavelength_input.editingFinished()
+		self.wavelength_input.editingFinished.connect(self.enablemove)
 		
 		#initialize button
 		#self.Initialize_Button.clicked.connect(self.HR460_Initialize)
@@ -154,9 +152,14 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		#Progress Bar Signal (emits from spectrometer to let us know when to update the progress bar)
 		self.progressSignal = self.spectrometer.getProgressSignal()
 		self.progressSignal.connect(self.updateProgressBar)
-		self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
+
+		self.movingMotorSignal = self.spectrometer.getMovingMotorSignal()
+		self.movingMotorSignal.connect(self.updateProgressBar)
 
 		self.busyMessageThread = BusyDots_Thread(self.progressBar)
+
+		#general variables
+		self.wavelength_stepPos = None
 
 	def busytext_progressbar(self):
 		"""This function is made in case specific actions should be coded in before each start of each busyMessageThread. 
@@ -164,17 +167,21 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		"""
 		self.busyMessageThread.start()
 
-	def updateProgressBar(self, message, scan):
+	def updateProgressBar(self, message, signature):
 		"""Slot to manage signals that update the progress bar in some way (functionality is similar to ScanningMenu.updateProgressBar())
 		"""
-		if scan == 'wavelength scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to wavelength scanning menu
+		if signature == 'wavelength scan': ##Note this is necessary because progressSignal is overloaded since it is also connected to wavelength scanning menu
 			return
-
-		currentVal = self.progressBar.value()
-		print(currentVal)
-		print(message)
-		self.progressBar.setValue(currentVal + self.progressIncrement)
-		self.progressBar.setFormat(message)
+		elif signature == 'time base scan':
+			self.progressIncrement = 100/5 #this determines how the progress bar increments as 5 progressSignals are emitted through spectrometer.setScanGUI()
+			currentVal = self.progressBar.value()
+			print(currentVal)
+			print(message)
+			self.progressBar.setValue(currentVal + self.progressIncrement)
+			self.progressBar.setFormat(message)
+		elif signature == 'moving motor':
+			self.progressBar.setFormat(str(message))
+			self.progressBar.setValue(message)
 		
 
 	def sliderEntranceSlit_Change(self, slider_val):
@@ -193,16 +200,31 @@ class TBS_Menu(QtWidgets.QMainWindow, TBS_Design.Ui_TBSMenu):
 		self.maxTotalTime = 600 #seconds
 		self.lcdNum_TotalTimeSlider.display((slider_val/100) * self.maxTotalTime)	
 
-	def enablemove(self, value):
+	def enablemove(self):
 		self.MoveMotor_Button.setEnabled(True)
+			
+
 
 	def movemotor(self):
-		wavelength_steps = self.convert_NMtoSTEPS(self.grating, self.wavelength_input.text())
-		self.spectrometer.setMotorPos(wavelength_steps)
+		"""Move the grating to observe a specific wavelength
+		"""
+		self.wavelength_stepPos = str(int(self.convert_NMtoSTEPS(self.grating, self.wavelength_input.text())))
+		self.currentPos = self.spectrometer.getMotorPos()
+		print('waiting for port to open for motor command')
 
-		if self.spectrometer.getMotorPos() == self.wavelength_input.text():
-			self.MoveMotor_Button.setEnabled(False)
+		moveAmount = str(int(self.wavelength_stepPos) - int(self.currentPos) )
+
+		self.movemotor_thread = MoveMotor_Thread(self.spectrometer, moveAmount)
+		print("current position: {}, input position: {}, move amount: {}".format(self.currentPos, self.wavelength_stepPos, moveAmount))
 		
+		self.movemotor_thread.start()	
+		self.movemotor_thread.finished.connect(self.motorthreadFinished)
+		
+
+	def motorthreadFinished(self):
+		print('spectrometer has been moved to {} from {}'.format(self.spectrometer.getMotorPos(), self.currentPos))
+		if self.spectrometer.getMotorPos() == self.wavelength_stepPos:
+			self.MoveMotor_Button.setEnabled(False)
 
 	#Button slots/funcs
 	def applysettings(self):
@@ -686,8 +708,31 @@ class BusyDots_Thread(QThread):
 				self.progressBar.setFormat(barMessage[:-3])
 			time.sleep(0.5)
 			self.actionSignal.emit()
-		return			
-		
+		return	
+
+class MoveMotor_Thread(QThread):
+	"""A thread that moves the grating motor to the desired wavelength position without impacting use of the GUI while motor is repositioning.
+	   Accounts for motor reversal backlash by overshooting in a reversed direction and then reversing to the desired position - this 
+	   should remove the backlash associated with reversing the direction of the motor (i.e. when moving from 600nm position to 400 nm position
+	   has a backlash of about 320 steps.
+	"""
+	def __init__(self, spectrometer, moveAmount, parent = None):
+		super(MoveMotor_Thread, self).__init__(parent)
+		self.moveAmount = int(moveAmount)
+		self.spectrometer = spectrometer
+
+
+	def run(self):
+		"""Move the grating to observe a specific wavelength
+		"""
+		if self.moveAmount > 0:
+			self.spectrometer.moveMotor(str(self.moveAmount+350))
+			self.spectrometer.moveMotor('-350')
+		elif self.moveAmount < 0:
+			self.spectrometer.moveMotor(str(self.moveAmount+(-350)))
+			self.spectrometer.moveMotor('350')
+		return
+
 					
 def main():
 	app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication

@@ -17,6 +17,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 class Spectrometer(QObject):
 	progressSignal = pyqtSignal(str, str)
 	positionsSignal = pyqtSignal(tuple, str)
+	movingMotorSignal = pyqtSignal(int, str)
 
 	#Set up serial port connection.
 	#Parameters: USB port name in a string format.
@@ -33,6 +34,9 @@ class Spectrometer(QObject):
 
 	def getPositionsSignal(self):
 		return self.positionsSignal
+
+	def getMovingMotorSignal(self):
+		return self.movingMotorSignal
 
 	def getSerial(self):
 		return self.s
@@ -133,6 +137,7 @@ class Spectrometer(QObject):
 				self.s.write(struct.pack('!B',247))
 				output = self.s.readline()
 				output = output.decode('utf-8')
+				print('output for intelligent mode: ', output)
 				timer=timer-1
 
 			if fromStartUpMenu:
@@ -234,14 +239,15 @@ class Spectrometer(QObject):
 	#Move the motor a certain number of steps
 	#Parameters: steps=a string representation of the number of steps to move  mono=monochromator input number
 	#Returns: NA. Prints when complete	
-	def moveMotor(self,steps,mono='0'):
+	def moveMotor(self,totalSteps,mono='0'):
 
-		if int(steps)+int(self.getMotorPos())>208701 or int(steps)+int(self.getMotorPos())<0:
+		if int(totalSteps)+int(self.getMotorPos())>208701 or int(totalSteps)+int(self.getMotorPos())<0:
 			print("Cannot move motor beyond range of 0-208701!")
 			return 0
+		initialStep = int(self.getMotorPos())
 
 		mono = str.encode(mono)
-		steps = str.encode(steps)
+		steps = str.encode(totalSteps)
 
 		self.s.write(b'F' + mono + b',' + steps + b'\r')
 		output = self.s.readline()
@@ -253,8 +259,16 @@ class Spectrometer(QObject):
 		print("Moving motor " + steps.decode('utf-8') + " steps...")
 
 		moving = self.checkMotor()
+		totalSteps = abs(int(totalSteps))
 
 		while moving==True:
+
+			currentStep = int(self.getMotorPos())
+			stepsTaken = abs(currentStep - initialStep)
+			progress = int(stepsTaken/totalSteps *100)
+			self.movingMotorSignal.emit(progress, 'moving motor')
+
+			print('current step: {}, initialStep: {}, stepsTaken: {}, totalSteps: {}, progress: {}'.format(currentStep, initialStep, stepsTaken, totalSteps, progress))
 			moving = self.checkMotor()
 		
 		print("Move complete")
@@ -314,7 +328,13 @@ class Spectrometer(QObject):
 		mono = str.encode(mono)
 
 		self.s.write(b'H' + mono + b'\r')
-		output = self.s.readline()
+		wait = 0
+		while wait != -1:
+			try:
+				output = self.s.readline()
+				wait = -1
+			except serial.serialutil.SerialException:
+				wait += 1
 		output = output.decode('utf-8')
 
 		try:
